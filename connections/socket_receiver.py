@@ -43,9 +43,9 @@ class SocketReceiver:
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind((self.host, self.port))
         self.socket.listen(1)
-        logger.info("Receiver waiting to be connected...")
+        # logger.info("Receiver waiting to be connected...")
         self.conn, _ = self.socket.accept()
-        logger.info("receiver connected")
+        # logger.info("receiver connected")
 
         self.should_listen.set()
         while not self.stop_event.is_set():

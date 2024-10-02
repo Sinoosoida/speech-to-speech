@@ -1,0 +1,1 @@
+python3 s2s_pipeline.py --recv_host 0.0.0.0 --send_host 0.0.0.0 --device cuda:0 --log_level debug
