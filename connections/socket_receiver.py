@@ -52,11 +52,11 @@ class SocketReceiver:
             audio_chunk = self.receive_full_chunk(self.conn, self.chunk_size)
             if audio_chunk is None:
                 # connection closed
-                logger.info("Ending chunck")
+                logger.info("Ending chunk")
                 self.queue_out.put(b"END")
                 break
             if self.should_listen.is_set():
-                logger.info("Chunk recived")
+                logger.info("Chunk received")
                 self.queue_out.put(audio_chunk)
         self.conn.close()
         logger.info("Receiver closed")
