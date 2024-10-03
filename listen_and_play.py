@@ -56,6 +56,7 @@ def listen_and_play(
             outdata[: len(data)] = data
             outdata[len(data) :] = b"\x00" * (len(outdata) - len(data))
         else:
+            print("No data")
             outdata[:] = b"\x00" * len(outdata)
 
     def callback_send(indata, frames, time, status):

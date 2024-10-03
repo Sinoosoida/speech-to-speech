@@ -41,8 +41,6 @@ try:
 except (LookupError, OSError):
     nltk.download("averaged_perceptron_tagger_eng")
 
-# caching allows ~50% compilation time reduction
-# see https://docs.google.com/document/d/1y5CRfMLdwEoF1nTk9q8qEu1mgMUuUtvhklPKJ2emLU8/edit#heading=h.o2asbxsrp1ma
 CURRENT_DIR = Path(__file__).resolve().parent
 os.environ["TORCHINDUCTOR_CACHE_DIR"] = os.path.join(CURRENT_DIR, "tmp")
 
