@@ -14,5 +14,5 @@
     "stt_model_name":"openai/whisper-large-v3-turbo",
     "language": "ru",
 
-    "tt2_device": "cuda:5"
+    "tts_device": "cuda:5"
 }
