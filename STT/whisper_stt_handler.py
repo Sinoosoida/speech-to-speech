@@ -131,6 +131,7 @@ class WhisperSTTHandler(BaseHandler):
         pred_text = self.processor.batch_decode(
             pred_ids, skip_special_tokens=True, decode_with_timestamps=False
         )[0]
+        logger.debug("Whisper result:{тест русского}")
         language_code = self.processor.tokenizer.decode(pred_ids[0, 1])[2:-2] # remove "<|" and "|>"
 
         logger.debug("finished whisper inference")

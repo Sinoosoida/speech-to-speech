@@ -53,7 +53,7 @@ class WhisperSTTHandlerArguments:
         },
     )
     language: Optional[str] = field(
-        default='en',
+        default='ru',
         metadata={
             "help": """The language for the conversation. 
             Choose between 'en' (english), 'fr' (french), 'es' (spanish), 
