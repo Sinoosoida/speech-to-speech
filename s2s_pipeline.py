@@ -191,7 +191,7 @@ def prepare_all_args(
     rename_args(parler_tts_handler_kwargs, "tts")
     rename_args(melo_tts_handler_kwargs, "melo")
     rename_args(chat_tts_handler_kwargs, "chat_tts")
-    rename_args(chat_tts_handler_kwargs, "mms_tts")
+    rename_args(mms_tts_handler_kwargs, "mms_tts")
 
 
 def initialize_queues_and_events():
