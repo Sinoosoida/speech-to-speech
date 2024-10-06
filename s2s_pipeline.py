@@ -404,7 +404,7 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
         except RuntimeError as e:
             logger.error("Error importing ChatTTSHandler")
             raise e
-        return MMSTTSHandler(
+        return OpenAITTSHandlerArguments(
             stop_event,
             queue_in=lm_response_queue,
             queue_out=send_audio_chunks_queue,
