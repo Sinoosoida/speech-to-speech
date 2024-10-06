@@ -4,11 +4,16 @@
 
     "log_level": "debug",
 
-    "llm": "transformers",
     "lm_model_name": "Vikhrmodels/Vikhr-Llama-3.2-1B-Instruct",
     "lm_device": "cuda:7",
     "chat_size": 100,
 
+    "llm": "open_api",
+    "open_api_model_name": "gpt-4o-mini-2024-07-18",
+    "open_api_init_chat_prompt": "Ты психолог. Помоги справится клиенту с его личными проблемами",
+    "open_api_api_key" : "",
+    "open_api_base_url":"",
+    "open_api_stream": true,
     "open_api_chat_size": 100,
 
     "stt_device": "cuda:6",
