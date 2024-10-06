@@ -4,6 +4,11 @@
 
     "log_level": "debug",
 
+    "stt_device": "cuda:6",
+    "stt":"whisper",
+    "stt_model_name":"openai/whisper-large-v3",
+    "language": "ru",
+
     "lm_model_name": "Vikhrmodels/Vikhr-Llama-3.2-1B-Instruct",
     "lm_device": "cuda:7",
     "chat_size": 100,
@@ -11,17 +16,12 @@
     "llm": "open_api",
     "open_api_model_name": "gpt-4o-mini-2024-07-18",
     "open_api_init_chat_prompt": "You're a psychologist with thirty years of experience named Stepan. Answer accordingly. Answer in the language of the user.",
-    "open_api_api_key" : "",
-    "open_api_proxy_url":"",
     "open_api_stream": true,
     "open_api_chat_size": 100,
 
-    "stt_device": "cuda:6",
-    "stt":"whisper",
-    "stt_model_name":"openai/whisper-large-v3",
-    "language": "ru",
-
     "mms_tts_device": "cuda:5",
-    "tts": "MMSTTS",
-    "mms_tts_model_name": "facebook/mms-tts-rus"
+    "mms_tts_model_name": "facebook/mms-tts-rus",
+
+    "tts": "openaiTTS",
+    "openai_tts_voice": "alloy"
 }
