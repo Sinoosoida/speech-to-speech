@@ -341,7 +341,7 @@ def get_llm_handler(
         raise ValueError("The LLM should be either transformers or mlx-lm")
 
 
-def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chunks_queue, should_listen, parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs):
+def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chunks_queue, should_listen, parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs, mms_tts_handler_kwargs):
     if module_kwargs.tts == "parler":
         from TTS.parler_handler import ParlerTTSHandler
         return ParlerTTSHandler(
@@ -390,7 +390,7 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
             queue_in=lm_response_queue,
             queue_out=send_audio_chunks_queue,
             setup_args=(should_listen,),
-            setup_kwargs=vars(chat_tts_handler_kwargs),
+            setup_kwargs=vars(mms_tts_handler_kwargs),
         )
     else:
         raise ValueError("The TTS should be either parler, melo or chatTTS")
