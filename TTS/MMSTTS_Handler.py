@@ -18,6 +18,7 @@ class MMSTTSHandler(BaseHandler):
             self,
             should_listen,
             device="cuda",
+            gen_kwargs={},
             model_name="facebook/mms-tts-rus",
     ):
         self.should_listen = should_listen
