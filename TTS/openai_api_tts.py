@@ -76,7 +76,7 @@ class OpenAITTSHandler(BaseHandler):
                         target_sr=target_sr
                     )
 
-                    audio_chunk = audio_chunk * 32767
+                    audio_chunk = audio_chunk
                     audio_chunk = audio_chunk.astype(np.int16)
                     yield audio_chunk
                     start_time = time.time()
