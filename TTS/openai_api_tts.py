@@ -68,7 +68,7 @@ class OpenAITTSHandler(BaseHandler):
                     print(audio_chunk.max())
 
                     # Ресемплирование с учетом исходной частоты дискретизации 48000 Гц
-                    original_sr = 32000  # Исходная частота дискретизации
+                    original_sr = 24000  # Исходная частота дискретизации
                     target_sr = 16000    # Целевая частота дискретизации для вашего пайплайна
 
                     audio_chunk = librosa.resample(
