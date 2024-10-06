@@ -4,6 +4,9 @@ from baseHandler import BaseHandler
 import numpy as np
 from rich.console import Console
 import torch
+import re
+from num2words import num2words
+from transliterate import translit
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -42,14 +45,10 @@ class MMSTTSHandler(BaseHandler):
 
         console.print(f"[green]ASSISTANT: {llm_sentence}")
 
-        # if self.device == "mps":
-        #     import time
-        #     start = time.time()
-        #     torch.mps.synchronize()
-        #     torch.mps.empty_cache()
-        #     _ = time.time() - start
-
         text = llm_sentence
+        text = re.sub(r'\d+', lambda x: num2words(int(x.group()), lang='ru'), text)
+        text = translit(text, 'ru')
+
         inputs = self.tokenizer(text, return_tensors="pt").to(self.device)
         with torch.no_grad():
             output = self.model(**inputs).waveform
