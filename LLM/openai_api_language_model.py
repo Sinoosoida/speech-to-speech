@@ -51,6 +51,7 @@ class OpenApiModelHandler(BaseHandler):
                     "An initial promt needs to be specified when setting init_chat_role."
                 )
             self.chat.init_chat({"role": init_chat_role, "content": init_chat_prompt})
+            logger.dubug(f"Prompt: {init_chat_prompt}")
         self.user_role = user_role
         self.client = OpenAI(api_key=api_key, base_url=base_url, http_client = None if proxy_url is None else httpx.Client(proxy=proxy_url))
         self.warmup()

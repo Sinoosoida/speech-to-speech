@@ -10,7 +10,7 @@
 
     "llm": "open_api",
     "open_api_model_name": "gpt-4o-mini-2024-07-18",
-    "open_api_init_chat_prompt": "Ты психолог. Помоги справится клиенту с его личными проблемами",
+    "open_api_init_chat_prompt": "You're a psychologist with thirty years of experience named Stepan. Answer accordingly. Answer in the language of the user.",
     "open_api_api_key" : "",
     "open_api_proxy_url":"",
     "open_api_stream": true,

@@ -414,9 +414,7 @@ def main():
     ) = parse_arguments()
 
     setup_logger(module_kwargs.log_level)
-    logger.warning(
-        "Тест русского языка в логере"
-    )
+
     prepare_all_args(
         module_kwargs,
         whisper_stt_handler_kwargs,
