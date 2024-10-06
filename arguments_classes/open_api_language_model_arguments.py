@@ -48,6 +48,12 @@ class OpenApiLanguageModelHandlerArguments:
             "help": "Is the root URL for all endpoints of an API, serving as the starting point for constructing API request.Default is Non"
         },
     )
+    open_api_proxy_url: str = field(
+        default=None,
+        metadata={
+            "help": "Is the root URL for all endpoints of an API, serving as the starting point for constructing API request.Default is Non"
+        },
+    )
     open_api_stream: bool = field(
         default=False,
         metadata={

@@ -1,5 +1,6 @@
 import logging
 import time
+import httpx
 
 from nltk import sent_tokenize
 from rich.console import Console
@@ -38,6 +39,7 @@ class OpenApiModelHandler(BaseHandler):
         chat_size=1,
         init_chat_role="system",
         init_chat_prompt="You are a helpful AI assistant.",
+        proxy_url = None
 
     ):
         self.model_name = model_name
@@ -50,7 +52,7 @@ class OpenApiModelHandler(BaseHandler):
                 )
             self.chat.init_chat({"role": init_chat_role, "content": init_chat_prompt})
         self.user_role = user_role
-        self.client = OpenAI(api_key=api_key, base_url=base_url)
+        self.client = OpenAI(api_key=api_key, base_url=base_url, http_client = None if proxy_url is None else httpx.Client(proxy=proxy_url))
         self.warmup()
 
     def warmup(self):
