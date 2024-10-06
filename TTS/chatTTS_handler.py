@@ -40,6 +40,10 @@ class ChatTTSHandler(BaseHandler):
         _ = self.model.infer("text")
 
     def process(self, llm_sentence):
+
+        if isinstance(llm_sentence, tuple):
+            llm_sentence, language_code = llm_sentence
+
         console.print(f"[green]ASSISTANT: {llm_sentence}")
         if self.device == "mps":
             import time
