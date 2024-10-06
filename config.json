@@ -9,11 +9,14 @@
     "lm_device": "cuda:7",
     "chat_size": 100,
 
+    "open_api_chat_size": 100,
+
     "stt_device": "cuda:6",
     "stt":"whisper",
     "stt_model_name":"openai/whisper-large-v3",
     "language": "ru",
 
-    "tts_device": "parler",
-    "tts": "chatTTS"
+    "mms_tts_device": "cuda:5",
+    "tts": "MMSTTS",
+    "mms_tts_model_name": "facebook/mms-tts-rus"
 }

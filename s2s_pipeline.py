@@ -9,6 +9,7 @@ from typing import Optional
 from sys import platform
 from VAD.vad_handler import VADHandler
 from arguments_classes.chat_tts_arguments import ChatTTSHandlerArguments
+from arguments_classes.MMSTTS_arguments import MMSTTSHandlerArguments
 from arguments_classes.language_model_arguments import LanguageModelHandlerArguments
 from arguments_classes.mlx_language_model_arguments import (
     MLXLanguageModelHandlerArguments,
@@ -80,6 +81,7 @@ def parse_arguments():
             ParlerTTSHandlerArguments,
             MeloTTSHandlerArguments,
             ChatTTSHandlerArguments,
+            MMSTTSHandlerArguments,
         )
     )
 
@@ -165,6 +167,7 @@ def prepare_all_args(
     parler_tts_handler_kwargs,
     melo_tts_handler_kwargs,
     chat_tts_handler_kwargs,
+    mms_tts_handler_kwargs
 ):
     prepare_module_args(
         module_kwargs,
@@ -176,6 +179,7 @@ def prepare_all_args(
         parler_tts_handler_kwargs,
         melo_tts_handler_kwargs,
         chat_tts_handler_kwargs,
+        mms_tts_handler_kwargs
     )
 
 
@@ -187,6 +191,7 @@ def prepare_all_args(
     rename_args(parler_tts_handler_kwargs, "tts")
     rename_args(melo_tts_handler_kwargs, "melo")
     rename_args(chat_tts_handler_kwargs, "chat_tts")
+    rename_args(chat_tts_handler_kwargs, "mms_tts")
 
 
 def initialize_queues_and_events():
@@ -214,6 +219,7 @@ def build_pipeline(
     parler_tts_handler_kwargs,
     melo_tts_handler_kwargs,
     chat_tts_handler_kwargs,
+    mms_tts_handler_kwargs,
     queues_and_events,
 ):
     stop_event = queues_and_events["stop_event"]
@@ -262,7 +268,7 @@ def build_pipeline(
 
     stt = get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs, paraformer_stt_handler_kwargs)
     lm = get_llm_handler(module_kwargs, stop_event, text_prompt_queue, lm_response_queue, language_model_handler_kwargs, open_api_language_model_handler_kwargs, mlx_language_model_handler_kwargs)
-    tts = get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chunks_queue, should_listen, parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs)
+    tts = get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chunks_queue, should_listen, parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs, mms_tts_handler_kwargs)
 
     return ThreadManager([*comms_handlers, vad, stt, lm, tts])
 
@@ -373,6 +379,19 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
             setup_args=(should_listen,),
             setup_kwargs=vars(chat_tts_handler_kwargs),
         )
+    elif module_kwargs.tts == "MMSTTS":
+        try:
+            from TTS.MMSTTS_Handler import MMSTTSHandler
+        except RuntimeError as e:
+            logger.error("Error importing ChatTTSHandler")
+            raise e
+        return MMSTTSHandler(
+            stop_event,
+            queue_in=lm_response_queue,
+            queue_out=send_audio_chunks_queue,
+            setup_args=(should_listen,),
+            setup_kwargs=vars(chat_tts_handler_kwargs),
+        )
     else:
         raise ValueError("The TTS should be either parler, melo or chatTTS")
 
@@ -391,6 +410,7 @@ def main():
         parler_tts_handler_kwargs,
         melo_tts_handler_kwargs,
         chat_tts_handler_kwargs,
+        mms_tts_handler_kwargs
     ) = parse_arguments()
 
     setup_logger(module_kwargs.log_level)
@@ -407,6 +427,7 @@ def main():
         parler_tts_handler_kwargs,
         melo_tts_handler_kwargs,
         chat_tts_handler_kwargs,
+        mms_tts_handler_kwargs,
     )
 
     queues_and_events = initialize_queues_and_events()
@@ -424,6 +445,7 @@ def main():
         parler_tts_handler_kwargs,
         melo_tts_handler_kwargs,
         chat_tts_handler_kwargs,
+        mms_tts_handler_kwargs,
         queues_and_events,
     )
 
