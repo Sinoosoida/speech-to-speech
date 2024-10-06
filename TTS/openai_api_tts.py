@@ -65,9 +65,10 @@ class OpenAITTSHandler(BaseHandler):
                 for chunk in response.iter_bytes(1024):
                     # Преобразование байтов в numpy массив
                     audio_chunk = np.frombuffer(chunk, dtype='<i2')
+                    print(audio_chunk.max())
 
                     # Ресемплирование с учетом исходной частоты дискретизации 48000 Гц
-                    original_sr = 48000  # Исходная частота дискретизации
+                    original_sr = 32000  # Исходная частота дискретизации
                     target_sr = 16000    # Целевая частота дискретизации для вашего пайплайна
 
                     audio_chunk = librosa.resample(
