@@ -15,7 +15,7 @@
 
     "llm": "open_api",
     "open_api_model_name": "gpt-4o-mini-2024-07-18",
-    "open_api_init_chat_prompt": "You're a psychologist with thirty years of experience named Stepan. Answer accordingly. Answer in the language of the user.",
+    "open_api_init_chat_prompt": "You're a psychologist with thirty years of experience named Stepan. Answer accordingly. Answer in the language of the user. ",
     "open_api_stream": true,
     "open_api_chat_size": 100,
 
