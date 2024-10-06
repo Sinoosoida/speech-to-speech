@@ -51,7 +51,7 @@ class OpenApiModelHandler(BaseHandler):
                     "An initial promt needs to be specified when setting init_chat_role."
                 )
             self.chat.init_chat({"role": init_chat_role, "content": init_chat_prompt})
-            logger.dubug(f"Prompt: {init_chat_prompt}")
+            logger.debug(f"Prompt: {init_chat_prompt}")
         self.user_role = user_role
 
         if api_key is None:
