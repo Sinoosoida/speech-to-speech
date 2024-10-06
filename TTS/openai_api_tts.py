@@ -62,7 +62,7 @@ class OpenAITTSHandler(BaseHandler):
                     response_format="pcm",  # PCM формат без заголовка
                     input=llm_sentence,
             ) as response:
-                for chunk in response.iter_bytes(1024):
+                for chunk in response.iter_bytes(2400):
                     # Преобразование байтов в numpy массив
                     audio_chunk = np.frombuffer(chunk, dtype='<i2')
                     print(audio_chunk.max())
