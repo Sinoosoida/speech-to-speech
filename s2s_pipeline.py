@@ -400,7 +400,7 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
         )
     elif module_kwargs.tts == "openaiTTS":
         try:
-            from TTS.MMSTTS_Handler import MMSTTSHandler
+            from TTS.openai_api_tts import OpenAITTSHandler
         except RuntimeError as e:
             logger.error("Error importing ChatTTSHandler")
             raise e
