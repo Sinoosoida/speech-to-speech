@@ -6,7 +6,7 @@
 
     "stt_device": "cuda:6",
     "stt":"whisper",
-    "stt_model_name":"openai/whisper-large-v3",
+    "stt_model_name":"openai/whisper-large-v3-turbo",
     "language": "ru",
 
     "lm_model_name": "Vikhrmodels/Vikhr-Llama-3.2-1B-Instruct",
