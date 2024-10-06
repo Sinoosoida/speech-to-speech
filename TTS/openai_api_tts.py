@@ -64,21 +64,7 @@ class OpenAITTSHandler(BaseHandler):
             ) as response:
                 for chunk in response.iter_bytes(1024):
                     # Преобразование байтов в numpy массив
-                    audio_chunk = np.frombuffer(chunk, dtype=np.int16)
-
-                    # Ресемплирование, если требуется
-                    # Предполагаем, что исходная частота дискретизации 24000 Гц
-                    original_sr = 24000
-                    target_sr = 16000
-                    audio_chunk = librosa.resample(
-                        audio_chunk.astype(np.float32),
-                        orig_sr=original_sr,
-                        target_sr=target_sr
-                    )
-                    # Преобразование обратно в int16
-                    audio_chunk = (audio_chunk * 32767).astype(np.int16)
-
-                    print(f"Time for chunk: {int((time.time() - start_time) * 1000)}ms")
+                    audio_chunk = np.frombuffer(chunk, dtype='<i2')
                     yield audio_chunk
                     start_time = time.time()
         except Exception as e:
