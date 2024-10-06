@@ -8,7 +8,7 @@ from openai import OpenAI
 
 from baseHandler import BaseHandler
 from LLM.chat import Chat
-
+import os
 logger = logging.getLogger(__name__)
 
 console = Console()
@@ -53,6 +53,15 @@ class OpenApiModelHandler(BaseHandler):
             self.chat.init_chat({"role": init_chat_role, "content": init_chat_prompt})
             logger.dubug(f"Prompt: {init_chat_prompt}")
         self.user_role = user_role
+
+        if api_key is None:
+            api_key = os.getenv("OPENAI_API_KEY")
+            if api_key is None:
+                raise ValueError("OpenAI API key must be provided or set in the OPENAI_API_KEY environment variable.")
+
+        if proxy_url is None:
+            proxy_url = os.getenv("PROXY_URL")
+
         self.client = OpenAI(api_key=api_key, base_url=base_url, http_client = None if proxy_url is None else httpx.Client(proxy=proxy_url))
         self.warmup()
 
