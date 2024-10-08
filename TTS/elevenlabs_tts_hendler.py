@@ -79,15 +79,21 @@ class ElevenLabsTTSHandler(BaseHandler):
                 optimize_streaming_latency=3,
                 output_format="pcm_16000",
             )
-
+            buffer = b""
             for chunk in audio:
                 if chunk:
-                    # Convert bytes to numpy array
-                    audio_chunk = np.frombuffer(chunk, dtype='<i2')  # 16-bit little-endian signed integers
-                    # ElevenLabs provides audio at 16000 Hz, mono
-                    # No need to resample
+                    # Добавляем текущий чанк в байтовый буфер
+                    buffer += chunk
+
+                    # Читаем четное количество байт
+                    even_chunk = buffer[:(len(buffer) // 2) * 2]
+
+                    # Преобразуем байты в numpy массив
+                    audio_chunk = np.frombuffer(even_chunk, dtype='<i2')  # 16-битные целые числа, little-endian
                     yield audio_chunk
-                    start_time = time.time()
+
+                    # Убираем прочитанные байты из буфера
+                    buffer = buffer[(len(buffer) // 2) * 2:]
         except Exception as e:
             logger.error(f"Error in ElevenLabsTTSHandler: {e}")
             self.should_listen.set()
