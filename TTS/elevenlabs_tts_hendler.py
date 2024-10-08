@@ -36,16 +36,11 @@ class ElevenLabsTTSHandler(BaseHandler):
 
         assert proxy_url
 
-        # Set up ElevenLabs client
-        if self.proxy_url:
-            self.client = ElevenLabs(
-                api_key=self.api_key,
-                httpx_client=httpx.Client(proxy=self.proxy_url),
-            )
-        else:
-            self.client = ElevenLabs(
-                api_key=self.api_key,
-            )
+
+        self.client = ElevenLabs(
+            api_key=self.api_key,
+            httpx_client=httpx.Client(proxy=self.proxy_url),
+        )
 
         self.warmup()
 
