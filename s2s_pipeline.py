@@ -10,6 +10,7 @@ from sys import platform
 from VAD.vad_handler import VADHandler
 from arguments_classes.chat_tts_arguments import ChatTTSHandlerArguments
 from arguments_classes.openai_api_tts_arguments import OpenAITTSHandlerArguments
+from arguments_classes.elevenlabs_tts_arguments import ElevenLabsTTSHandlerArguments
 from arguments_classes.MMSTTS_arguments import MMSTTSHandlerArguments
 from arguments_classes.language_model_arguments import LanguageModelHandlerArguments
 from arguments_classes.mlx_language_model_arguments import (
@@ -58,7 +59,7 @@ def rename_args(args, prefix):
     for key in copy(args.__dict__):
         if key.startswith(prefix):
             value = args.__dict__.pop(key)
-            new_key = key[len(prefix) + 1 :]  # Remove prefix and underscore
+            new_key = key[len(prefix) + 1:]  # Remove prefix and underscore
             if new_key.startswith("gen_"):
                 gen_kwargs[new_key[4:]] = value  # Remove 'gen_' and add to dict
             else:
@@ -83,7 +84,8 @@ def parse_arguments():
             MeloTTSHandlerArguments,
             ChatTTSHandlerArguments,
             MMSTTSHandlerArguments,
-            OpenAITTSHandlerArguments
+            OpenAITTSHandlerArguments,
+            ElevenLabsTTSHandlerArguments
         )
     )
 
@@ -160,17 +162,18 @@ def prepare_module_args(module_kwargs, *handler_kwargs):
 
 
 def prepare_all_args(
-    module_kwargs,
-    whisper_stt_handler_kwargs,
-    paraformer_stt_handler_kwargs,
-    language_model_handler_kwargs,
-    open_api_language_model_handler_kwargs,
-    mlx_language_model_handler_kwargs,
-    parler_tts_handler_kwargs,
-    melo_tts_handler_kwargs,
-    chat_tts_handler_kwargs,
-    mms_tts_handler_kwargs,
-    openai_tts_handler_kwargs
+        module_kwargs,
+        whisper_stt_handler_kwargs,
+        paraformer_stt_handler_kwargs,
+        language_model_handler_kwargs,
+        open_api_language_model_handler_kwargs,
+        mlx_language_model_handler_kwargs,
+        parler_tts_handler_kwargs,
+        melo_tts_handler_kwargs,
+        chat_tts_handler_kwargs,
+        mms_tts_handler_kwargs,
+        openai_tts_handler_kwargs,
+        elevenlabs_tts_handler_kwargs
 ):
     prepare_module_args(
         module_kwargs,
@@ -183,9 +186,9 @@ def prepare_all_args(
         melo_tts_handler_kwargs,
         chat_tts_handler_kwargs,
         mms_tts_handler_kwargs,
-        openai_tts_handler_kwargs
+        openai_tts_handler_kwargs,
+        elevenlabs_tts_handler_kwargs
     )
-
 
     rename_args(whisper_stt_handler_kwargs, "stt")
     rename_args(paraformer_stt_handler_kwargs, "paraformer_stt")
@@ -197,6 +200,7 @@ def prepare_all_args(
     rename_args(chat_tts_handler_kwargs, "chat_tts")
     rename_args(mms_tts_handler_kwargs, "mms_tts")
     rename_args(openai_tts_handler_kwargs, "openai_tts")
+    rename_args(elevenlabs_tts_handler_kwargs, "elevenlabs")
 
 
 def initialize_queues_and_events():
@@ -212,21 +216,22 @@ def initialize_queues_and_events():
 
 
 def build_pipeline(
-    module_kwargs,
-    socket_receiver_kwargs,
-    socket_sender_kwargs,
-    vad_handler_kwargs,
-    whisper_stt_handler_kwargs,
-    paraformer_stt_handler_kwargs,
-    language_model_handler_kwargs,
-    open_api_language_model_handler_kwargs,
-    mlx_language_model_handler_kwargs,
-    parler_tts_handler_kwargs,
-    melo_tts_handler_kwargs,
-    chat_tts_handler_kwargs,
-    mms_tts_handler_kwargs,
-    openai_tts_handler_kwargs,
-    queues_and_events,
+        module_kwargs,
+        socket_receiver_kwargs,
+        socket_sender_kwargs,
+        vad_handler_kwargs,
+        whisper_stt_handler_kwargs,
+        paraformer_stt_handler_kwargs,
+        language_model_handler_kwargs,
+        open_api_language_model_handler_kwargs,
+        mlx_language_model_handler_kwargs,
+        parler_tts_handler_kwargs,
+        melo_tts_handler_kwargs,
+        chat_tts_handler_kwargs,
+        mms_tts_handler_kwargs,
+        openai_tts_handler_kwargs,
+        elevenlabs_tts_handler_kwargs,
+        queues_and_events,
 ):
     stop_event = queues_and_events["stop_event"]
     should_listen = queues_and_events["should_listen"]
@@ -272,14 +277,19 @@ def build_pipeline(
         setup_kwargs=vars(vad_handler_kwargs),
     )
 
-    stt = get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs, paraformer_stt_handler_kwargs)
-    lm = get_llm_handler(module_kwargs, stop_event, text_prompt_queue, lm_response_queue, language_model_handler_kwargs, open_api_language_model_handler_kwargs, mlx_language_model_handler_kwargs)
-    tts = get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chunks_queue, should_listen, parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs, mms_tts_handler_kwargs, openai_tts_handler_kwargs)
+    stt = get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs,
+                          paraformer_stt_handler_kwargs)
+    lm = get_llm_handler(module_kwargs, stop_event, text_prompt_queue, lm_response_queue, language_model_handler_kwargs,
+                         open_api_language_model_handler_kwargs, mlx_language_model_handler_kwargs)
+    tts = get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chunks_queue, should_listen,
+                          parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs,
+                          mms_tts_handler_kwargs, openai_tts_handler_kwargs, elevenlabs_tts_handler_kwargs)
 
     return ThreadManager([*comms_handlers, vad, stt, lm, tts])
 
 
-def get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs, paraformer_stt_handler_kwargs):
+def get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs,
+                    paraformer_stt_handler_kwargs):
     if module_kwargs.stt == "whisper":
         from STT.whisper_stt_handler import WhisperSTTHandler
         return WhisperSTTHandler(
@@ -309,13 +319,13 @@ def get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_
 
 
 def get_llm_handler(
-    module_kwargs, 
-    stop_event, 
-    text_prompt_queue, 
-    lm_response_queue, 
-    language_model_handler_kwargs,
-    open_api_language_model_handler_kwargs,
-    mlx_language_model_handler_kwargs
+        module_kwargs,
+        stop_event,
+        text_prompt_queue,
+        lm_response_queue,
+        language_model_handler_kwargs,
+        open_api_language_model_handler_kwargs,
+        mlx_language_model_handler_kwargs
 ):
     if module_kwargs.llm == "transformers":
         from LLM.language_model import LanguageModelHandler
@@ -347,7 +357,9 @@ def get_llm_handler(
         raise ValueError("The LLM should be either transformers or mlx-lm")
 
 
-def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chunks_queue, should_listen, parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs, mms_tts_handler_kwargs, openai_tts_handler_kwargs):
+def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chunks_queue, should_listen,
+                    parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs, mms_tts_handler_kwargs,
+                    openai_tts_handler_kwargs, elevenlabs_tts_handler_kwargs):
     if module_kwargs.tts == "parler":
         from TTS.parler_handler import ParlerTTSHandler
         return ParlerTTSHandler(
@@ -411,6 +423,19 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
             setup_args=(should_listen,),
             setup_kwargs=vars(openai_tts_handler_kwargs),
         )
+    elif module_kwargs.tts == "elevenlabsTTS":
+        try:
+            from TTS.elevenlabs_tts_hendler import ElevenLabsTTSHandler
+        except RuntimeError as e:
+            logger.error("Error importing ChatTTSHandler")
+            raise e
+        return ElevenLabsTTSHandler(
+            stop_event,
+            queue_in=lm_response_queue,
+            queue_out=send_audio_chunks_queue,
+            setup_args=(should_listen,),
+            setup_kwargs=vars(elevenlabs_tts_handler_kwargs),
+        )
     else:
         raise ValueError("The TTS should be either parler, melo or chatTTS")
 
@@ -430,7 +455,8 @@ def main():
         melo_tts_handler_kwargs,
         chat_tts_handler_kwargs,
         mms_tts_handler_kwargs,
-        openai_tts_handler_kwargs
+        openai_tts_handler_kwargs,
+        elevenlabs_tts_handler_kwargs
     ) = parse_arguments()
 
     setup_logger(module_kwargs.log_level)
@@ -446,7 +472,8 @@ def main():
         melo_tts_handler_kwargs,
         chat_tts_handler_kwargs,
         mms_tts_handler_kwargs,
-        openai_tts_handler_kwargs
+        openai_tts_handler_kwargs,
+        elevenlabs_tts_handler_kwargs
     )
 
     queues_and_events = initialize_queues_and_events()
@@ -466,6 +493,7 @@ def main():
         chat_tts_handler_kwargs,
         mms_tts_handler_kwargs,
         openai_tts_handler_kwargs,
+        elevenlabs_tts_handler_kwargs,
         queues_and_events,
     )
 
