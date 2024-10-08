@@ -99,7 +99,7 @@ class OpenApiModelHandler(BaseHandler):
                 #     {"role": self.user_role, "content": prompt},
                 # ],
                 messages=[
-                    {"role": "self.user_role", "content": "Привет, я миша!"},
+                    {"role": self.user_role, "content": "Привет, я миша!"},
                     {"role": "assistant", "content": "Хорошо, начнём с"}
                 ],
                 stream=self.stream
