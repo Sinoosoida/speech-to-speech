@@ -98,7 +98,9 @@ class OpenApiModelHandler(BaseHandler):
                 # messages=[
                 #     {"role": self.user_role, "content": prompt},
                 # ],
-                messages=self.chat.to_list().extend([{"role":"assistant", "content":"Рад тебя слышать"}]),
+                messages=self.chat.to_list().extend([
+                    {"role": "assistant", "content": "Хорошо, начнём с"}
+                ]),
                 stream=self.stream
             )
             if self.stream:
