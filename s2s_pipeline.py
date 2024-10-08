@@ -200,7 +200,7 @@ def prepare_all_args(
     rename_args(chat_tts_handler_kwargs, "chat_tts")
     rename_args(mms_tts_handler_kwargs, "mms_tts")
     rename_args(openai_tts_handler_kwargs, "openai_tts")
-    rename_args(elevenlabs_tts_handler_kwargs, "elevenlabs")
+    rename_args(elevenlabs_tts_handler_kwargs, "elevenlabs_tts")
 
 
 def initialize_queues_and_events():
