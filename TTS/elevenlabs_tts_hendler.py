@@ -46,6 +46,11 @@ class ElevenLabsTTSHandler(BaseHandler):
 
     def warmup(self):
         logger.info(f"Warmup {self.__class__.__name__}")
+        try:
+            self.client.models.get_all()
+            logger.debug(f"Warmup {self.__class__.__name__} done")
+        except Exception as e:
+            logger.debug(f"[red]Warmup {self.__class__.__name__} failed")
         # No warmup required for ElevenLabs API
 
     def process(self, llm_sentence):
@@ -58,6 +63,14 @@ class ElevenLabsTTSHandler(BaseHandler):
         try:
             start_time = time.time()
             # Generate audio with streaming
+            logger.debug("Params:",{
+                "voice":self.voice,
+                "text":llm_sentence,
+                "model":self.model,
+                "stream":True,
+                "optimize_streaming_latency":3,
+                "output_format":"pcm_16000",
+            })
             audio = self.client.generate(
                 voice=self.voice,
                 text=llm_sentence,
