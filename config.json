@@ -19,7 +19,7 @@
     "open_api_stream": true,
     "open_api_chat_size": 100,
 
-    "tts": "openaiTTS",
+    "tts": "elevenlabsTTS",
 
     "mms_tts_device": "cuda:5",
     "mms_tts_model_name": "facebook/mms-tts-rus",
