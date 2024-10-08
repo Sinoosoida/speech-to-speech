@@ -55,22 +55,14 @@ class ElevenLabsTTSHandler(BaseHandler):
 
     def process(self, llm_sentence):
         # Handle possible language code
+        logger.debug(f"[red]Labs getting mess")
         if isinstance(llm_sentence, tuple):
             llm_sentence, language_code = llm_sentence
 
         console.print(f"[green]ASSISTANT: {llm_sentence}")
 
         try:
-            start_time = time.time()
-            # Generate audio with streaming
-            logger.debug("Params:",{
-                "voice":self.voice,
-                "text":llm_sentence,
-                "model":self.model,
-                "stream":True,
-                "optimize_streaming_latency":3,
-                "output_format":"pcm_16000",
-            })
+
             audio = self.client.generate(
                 voice=self.voice,
                 text=llm_sentence,
@@ -82,6 +74,7 @@ class ElevenLabsTTSHandler(BaseHandler):
             buffer = b""
             for chunk in audio:
                 if chunk:
+                    logger.debug(f"[red]Get_labs_chunck")
                     # Добавляем текущий чанк в байтовый буфер
                     buffer += chunk
 
@@ -94,6 +87,7 @@ class ElevenLabsTTSHandler(BaseHandler):
 
                     # Убираем прочитанные байты из буфера
                     buffer = buffer[(len(buffer) // 2) * 2:]
+            logger.debug(f"[red]All chunck recived")
         except Exception as e:
             logger.error(f"Error in ElevenLabsTTSHandler: {e}")
             self.should_listen.set()

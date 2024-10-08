@@ -90,9 +90,7 @@ class OpenApiModelHandler(BaseHandler):
                 if language_code[-5:] == "-auto":
                     language_code = language_code[:-5]
                     prompt = f"Please reply to my message in {WHISPER_LANGUAGE_TO_LLM_LANGUAGE[language_code]}. " + prompt
-
-            logger.debug(f"messege: {prompt}")
-            logger.debug(f"messege: {self.chat.to_list()}")
+            logger.debug(f"[red]OpenAI getting mess")
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=self.chat.to_list(),
@@ -101,13 +99,17 @@ class OpenApiModelHandler(BaseHandler):
             if self.stream:
                 generated_text, printable_text = "", ""
                 for chunk in response:
+                    logger.debug(f"[red]OpenaiGot chunck")
                     new_text = chunk.choices[0].delta.content or ""
                     generated_text += new_text
                     printable_text += new_text
                     sentences = sent_tokenize(printable_text)
                     if len(sentences) > 1:
+                        logger.debug(f"[red]OpenaiGot sentence")
                         yield sentences[0], language_code
+                        logger.debug(f"[red]OpenaiSentence returned")
                         printable_text = new_text
+                logger.debug(f"[red]OpenaiAll_chuncks_recived")
                 self.chat.append({"role": "assistant", "content": generated_text})
                 # don't forget last sentence
                 yield printable_text, language_code
