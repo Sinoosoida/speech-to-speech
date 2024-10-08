@@ -35,10 +35,12 @@ class OpenAITTSHandler(BaseHandler):
             proxy_url = os.getenv("PROXY_URL")
         self.proxy_url = proxy_url
 
+        assert proxy_url
+
         # Настройка клиента OpenAI
         self.client = OpenAI(
             api_key=self.api_key,
-            http_client=httpx.Client(proxy=self.proxy_url) if self.proxy_url else None
+            http_client=httpx.Client(proxy=self.proxy_url)
         )
 
         self.warmup()
