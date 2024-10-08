@@ -95,13 +95,7 @@ class OpenApiModelHandler(BaseHandler):
             logger.debug(f"messege: {self.chat.to_list()}")
             response = self.client.chat.completions.create(
                 model=self.model_name,
-                # messages=[
-                #     {"role": self.user_role, "content": prompt},
-                # ],
-                messages=[
-                    {"role": self.user_role, "content": "Привет, я миша!"},
-                    {"role": "assistant", "content": "Хорошо, начнём с"}
-                ],
+                messages=self.chat.to_list(),
                 stream=self.stream
             )
             if self.stream:
