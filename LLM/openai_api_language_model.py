@@ -92,13 +92,13 @@ class OpenApiModelHandler(BaseHandler):
                     prompt = f"Please reply to my message in {WHISPER_LANGUAGE_TO_LLM_LANGUAGE[language_code]}. " + prompt
 
             logger.debug(f"messege: {prompt}")
-            logger.debug(f"messege: {self.chat.to_list()+[{"role":"assistant","content":"Рад тебя слышать"}]}")
+            logger.debug(f"messege: {self.chat.to_list()}")
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 # messages=[
                 #     {"role": self.user_role, "content": prompt},
                 # ],
-                messages=self.chat.to_list(),
+                messages=self.chat.to_list().extend([{"role":"assistant", "content":"Рад тебя слышать"}]),
                 stream=self.stream
             )
             if self.stream:
