@@ -17,7 +17,6 @@ class ThreadManager:
             thread.start()
 
     def stop(self):
-        print("debug")
         for handler in self.handlers:
             handler.stop_event.set()
         for thread in self.threads:

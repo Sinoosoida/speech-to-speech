@@ -65,7 +65,8 @@ class BaseHandler:
                         logger.debug(f"{self.__class__.__name__}: {self.last_time:.3f} s")
                     self.queue_out.put(output)
                     start_time = perf_counter()
-                logger.debug(f"{self.__class__.__name__} ended output after: {self.last_time:.3f} s")
+                if self.last_time > self.min_time_to_debug:
+                    logger.debug(f"{self.__class__.__name__} ended output after: {self.last_time:.3f} s")
 
         if self.threads > 1:
             self.executor.shutdown(wait=True)
