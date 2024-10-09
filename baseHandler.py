@@ -3,6 +3,7 @@ import logging
 import threading
 from queue import Queue
 import concurrent.futures
+from collections import deque  # Added for efficient buffer management
 
 
 logger = logging.getLogger(__name__)
@@ -58,10 +59,10 @@ class BaseHandler:
                 start_time = perf_counter()
                 first_chunk = True
                 for output in self.process(input_data):
+                    self._times.append(perf_counter() - start_time)
                     if first_chunk:
                         logger.debug(f"{self.__class__.__name__} started output after: {self.last_time:.3f} s")
                         first_chunk = False
-                    self._times.append(perf_counter() - start_time)
                     if self.last_time > self.min_time_to_debug:
                         logger.debug(f"{self.__class__.__name__}: {self.last_time:.3f} s")
                     self.queue_out.put(output)
