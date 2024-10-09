@@ -31,7 +31,7 @@ from rich.console import Console
 from transformers import (
     HfArgumentParser,
 )
-
+from test import BaseHandler as B
 from utils.thread_manager import ThreadManager
 
 # Ensure that the necessary NLTK resources are available
@@ -284,8 +284,8 @@ def build_pipeline(
     tts = get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chunks_queue, should_listen,
                           parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs,
                           mms_tts_handler_kwargs, openai_tts_handler_kwargs, elevenlabs_tts_handler_kwargs)
-
-    return ThreadManager([*comms_handlers, vad, stt, lm, tts])
+    b = B()
+    return ThreadManager([*comms_handlers, vad, stt, lm, tts, b])
 
 
 def get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs,
@@ -433,7 +433,7 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
             stop_event,
             queue_in=lm_response_queue,
             queue_out=send_audio_chunks_queue,
-            threads=2,
+            threads=1,
             setup_args=(should_listen,),
             setup_kwargs=vars(elevenlabs_tts_handler_kwargs),
         )

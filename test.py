@@ -1,46 +1,44 @@
-import logging
-import concurrent.futures
 import threading
-from TTS.elevenlabs_tts_hendler import ElevenLabsTTSHandler
-import torch
+import time
+from concurrent.futures import ThreadPoolExecutor
+import logging
 
-# Настройка логгирования до создания любого логгера
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.DEBUG,  # Установите уровень логгирования на DEBUG
-)
-
-# Настройка логгирования для библиотеки torch
-torch._logging.set_logs(graph_breaks=True, recompiles=True, cudagraphs=True)
-
-# Создаем глобальный логгер
 logger = logging.getLogger(__name__)
 
-# Допустим, у вас есть два разных текста для генерации
-texts_to_process = ["Hello, how are you?", "Привет, как дела?", "Ты супер!", "Сколько килогам в граме?", "Ииииииихххааа...."]
+class BaseHandler:
+    def __init__(self, *args, **kwargs ):
+        # Initialization code
+        pass
 
-def run_tts_process(handler, text):
-    audio_chunks = []
-    for audio_chunk in handler.process(text):
-        audio_chunks.append(audio_chunk)
-    return audio_chunks
+    def worker_task(self, name, duration):
+        print(f"Task {name} started")
+        time.sleep(duration)
+        print(f"Task {name} finished")
+        return f"Result of task {name}"
 
-if __name__ == "__main__":
-    # Создание экземпляра вашего обработчика
-    tts_handler = ElevenLabsTTSHandler()
+    def thread_function(self):
+        print("Thread started")
+        with ThreadPoolExecutor(max_workers=30) as executor:
+            futures = []
+            for i in range(20):
+                future = executor.submit(self.worker_task, f"Task-{i}", 1 + i * 0.5)
+                futures.append(future)
 
-    # Установка условий прослушивания (добавлено для примера)
-    should_listen = threading.Event()
-    tts_handler.setup(should_listen, proxy_url = "http://RGHu6U:WP6Z4s@168.80.200.166:8000", api_key = "sk_bfac76ea86730d4708bfc6d5b740084933672b2dd359ec1c")
+            for future in futures:
+                result = future.result()
+                print(result)
+        print("Thread finished")
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        # Запускаем метод process в двух потоках
-        futures = [executor.submit(run_tts_process, tts_handler, text) for text in texts_to_process]
-
-        # Ожидаем завершения всех потоков
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                audio_chunks = future.result()
-                print(f"Processed audio chunks")
-            except Exception as e:
-                print(f"An error occurred: {e}")
+    def run(self, *args, **kwargs ):
+        self.thread_function()
+        # Rest of your run method
+#
+# if __name__ == "__main__":
+#     handler = BaseHandler()
+#     handler_thread = threading.Thread(target=handler.run, daemon=False)
+#     handler_thread.start()
+#
+#     # Wait for the handler thread to finish
+#     handler_thread.join()
+#
+#     print("Main thread finished")

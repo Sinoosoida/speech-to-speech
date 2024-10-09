@@ -41,19 +41,19 @@ class BaseHandler:
     def process(self, input_data):
         raise NotImplementedError
 
-    def worker_task(self, name, duration):
+    def worker_task(name, duration):
         print(f"Task {name} started")
         time.sleep(duration)
         print(f"Task {name} finished")
         return f"Result of task {name}"
 
-    def thread_function(self):
+    def thread_function():
         print("Thread started")
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=30)
         futures = []
         for i in range(20):
             # Отправляем задачи на выполнение в пул потоков
-            future = executor.submit(self.worker_task, f"Task-{i}", 1 + i * 0.5)
+            future = executor.submit(worker_task, f"Task-{i}", 1 + i * 0.5)
             futures.append(future)
 
         # Ждем завершения всех задач и получаем результаты
@@ -65,7 +65,6 @@ class BaseHandler:
 
     def run(self):
         if self.threads > 1:
-            self.thread_function()
             # Initialize the executor within the run method
             self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.threads)
 
