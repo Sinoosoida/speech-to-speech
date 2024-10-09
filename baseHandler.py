@@ -4,7 +4,7 @@ import threading
 from queue import Queue
 from collections import deque  # Added for efficient buffer management
 import concurrent.futures
-import time
+
 logger = logging.getLogger(__name__)
 
 class BaseHandler:
@@ -32,8 +32,7 @@ class BaseHandler:
             self.write_condition = threading.Condition(self.write_lock)  # Condition for notifying threads about write availability
 
             # Initialize thread pool for parallel processing
-            # self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=threads)
-
+            self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=threads)
 
     def setup(self, *args, **kwargs):
         pass
@@ -41,33 +40,7 @@ class BaseHandler:
     def process(self, input_data):
         raise NotImplementedError
 
-    def worker_task(name, duration):
-        print(f"Task {name} started")
-        time.sleep(duration)
-        print(f"Task {name} finished")
-        return f"Result of task {name}"
-
-    def thread_function():
-        print("Thread started")
-        executor = concurrent.futures.ThreadPoolExecutor(max_workers=30)
-        futures = []
-        for i in range(20):
-            # Отправляем задачи на выполнение в пул потоков
-            future = executor.submit(worker_task, f"Task-{i}", 1 + i * 0.5)
-            futures.append(future)
-
-        # Ждем завершения всех задач и получаем результаты
-        for future in futures:
-            result = future.result()
-            print(result)
-        executor.shutdown(wait=True)
-        print("Thread finished")
-
     def run(self):
-        if self.threads > 1:
-            # Initialize the executor within the run method
-            self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.threads)
-
         while not self.stop_event.is_set():
             input_data = self.queue_in.get()
 
@@ -79,9 +52,7 @@ class BaseHandler:
             if self.threads > 1:
                 seq = self.sequence_counter
                 self.sequence_counter += 1
-                logger.debug("1")
                 self.executor.submit(self.process_and_write, input_data, seq)
-                logger.debug("2")
             else:
                 start_time = perf_counter()
                 first_chunk = True
@@ -97,13 +68,11 @@ class BaseHandler:
                 logger.debug(f"{self.__class__.__name__} ended output after: {self.last_time:.3f} s")
 
         if self.threads > 1:
-            logger.debug(f"shutdowns executor")
             self.executor.shutdown(wait=True)
         self.cleanup()
         self.queue_out.put(b"END")
 
     def process_and_write(self, input_data, seq):
-        logger.debug("1.2")
         start_time = perf_counter()
         buffer = deque()  # Internal buffer for storing chunks
         first_chunk = True
