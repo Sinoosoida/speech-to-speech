@@ -207,11 +207,11 @@ def initialize_queues_and_events():
     return {
         "stop_event": Event(),
         "should_listen": Event(),
-        "recv_audio_chunks_queue": Queue(),
-        "send_audio_chunks_queue": Queue(),
-        "spoken_prompt_queue": Queue(),
-        "text_prompt_queue": Queue(),
-        "lm_response_queue": Queue(),
+        "recv_audio_chunks_queue": Queue(), #Полученое аудио
+        "send_audio_chunks_queue": Queue(), #Отправленое аудио
+        "spoken_prompt_queue": Queue(),     #Куски речи
+        "text_prompt_queue": Queue(),       #Куски текст
+        "lm_response_queue": Queue(),       #Ответы LLM
     }
 
 

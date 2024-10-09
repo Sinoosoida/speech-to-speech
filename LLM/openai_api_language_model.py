@@ -45,6 +45,7 @@ class OpenApiModelHandler(BaseHandler):
         self.model_name = model_name
         self.stream = stream
         self.chat = Chat(chat_size)
+
         if init_chat_role:
             if not init_chat_prompt:
                 raise ValueError(
@@ -52,6 +53,7 @@ class OpenApiModelHandler(BaseHandler):
                 )
             self.chat.init_chat({"role": init_chat_role, "content": init_chat_prompt})
             logger.debug(f"Prompt: {init_chat_prompt}")
+
         self.user_role = user_role
 
         if api_key is None:
@@ -89,27 +91,35 @@ class OpenApiModelHandler(BaseHandler):
                 prompt, language_code = prompt
                 if language_code[-5:] == "-auto":
                     language_code = language_code[:-5]
-                    prompt = f"Please reply to my message in {WHISPER_LANGUAGE_TO_LLM_LANGUAGE[language_code]}. " + prompt
-            logger.debug(f"[red]OpenAI getting mess")
+
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=self.chat.to_list(),
                 stream=self.stream
             )
+
+            first_chunk = True
+            first_sentence = True
             if self.stream:
                 generated_text, printable_text = "", ""
                 for chunk in response:
-                    logger.debug(f"[red]OpenaiGot chunck")
+                    if first_chunk:  # Добавлено: вывод информации о первом чанке
+                        logger.debug(f"First chunk received")
+                        first_chunk = False
                     new_text = chunk.choices[0].delta.content or ""
                     generated_text += new_text
                     printable_text += new_text
                     sentences = sent_tokenize(printable_text)
                     if len(sentences) > 1:
-                        logger.debug(f"[red]OpenaiGot sentence")
-                        yield sentences[0], language_code
-                        logger.debug(f"[red]OpenaiSentence returned")
+                        if first_sentence:  # Добавлено: вывод информации о первом чанке
+                            logger.debug(f"First sentence received")
+                            first_sentence = False
+
+                        # yield sentences[0], language_code
+                        yield sentences[0]
                         printable_text = new_text
-                logger.debug(f"[red]OpenaiAll_chuncks_recived")
+
+                logger.debug(f"All chunks received")
                 self.chat.append({"role": "assistant", "content": generated_text})
                 # don't forget last sentence
                 yield printable_text, language_code

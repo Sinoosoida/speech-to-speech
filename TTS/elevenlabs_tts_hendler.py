@@ -50,19 +50,16 @@ class ElevenLabsTTSHandler(BaseHandler):
             self.client.models.get_all()
             logger.debug(f"Warmup {self.__class__.__name__} done")
         except Exception as e:
-            logger.debug(f"[red]Warmup {self.__class__.__name__} failed")
-        # No warmup required for ElevenLabs API
+            logger.error(f"Warmup {self.__class__.__name__} failed, {e}")
 
     def process(self, llm_sentence):
-        # Handle possible language code
-        logger.debug(f"[red]Labs getting mess")
+
         if isinstance(llm_sentence, tuple):
             llm_sentence, language_code = llm_sentence
 
         console.print(f"[green]ASSISTANT: {llm_sentence}")
 
         try:
-
             audio = self.client.generate(
                 voice=self.voice,
                 text=llm_sentence,
@@ -72,22 +69,21 @@ class ElevenLabsTTSHandler(BaseHandler):
                 output_format="pcm_16000",
             )
             buffer = b""
+            first_chunk = True
             for chunk in audio:
                 if chunk:
-                    logger.debug(f"[red]Get_labs_chunck")
-                    # Добавляем текущий чанк в байтовый буфер
+
+                    if first_chunk:  # Добавлено: вывод информации о первом чанке
+                        logger.debug(f"First chunk received")
+                        first_chunk = False
+
                     buffer += chunk
-
-                    # Читаем четное количество байт
                     even_chunk = buffer[:(len(buffer) // 2) * 2]
-
-                    # Преобразуем байты в numpy массив
                     audio_chunk = np.frombuffer(even_chunk, dtype='<i2')  # 16-битные целые числа, little-endian
                     yield audio_chunk
-
-                    # Убираем прочитанные байты из буфера
                     buffer = buffer[(len(buffer) // 2) * 2:]
-            logger.debug(f"[red]All chunck recived")
+
+            logger.debug(f"All chunck recived")
         except Exception as e:
             logger.error(f"Error in ElevenLabsTTSHandler: {e}")
             self.should_listen.set()
