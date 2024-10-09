@@ -97,6 +97,7 @@ class BaseHandler:
                 logger.debug(f"{self.__class__.__name__} ended output after: {self.last_time:.3f} s")
 
         if self.threads > 1:
+            logger.debug(f"shutdowns executor")
             self.executor.shutdown(wait=True)
         self.cleanup()
         self.queue_out.put(b"END")
