@@ -42,6 +42,10 @@ class BaseHandler:
         raise NotImplementedError
 
     def run(self):
+        if self.threads > 1:
+            # Initialize the executor within the run method
+            self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.threads)
+
         while not self.stop_event.is_set():
             input_data = self.queue_in.get()
 
