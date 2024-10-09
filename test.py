@@ -22,7 +22,9 @@ class BaseHandler:
             for i in range(20):
                 future = executor.submit(self.worker_task, f"Task-{i}", 1 + i * 0.5)
 
+            print("ok1")
             executor.shutdown(wait=True)
+            print("ok2")
         print("Thread finished")
 
     def run(self, *args, **kwargs ):
