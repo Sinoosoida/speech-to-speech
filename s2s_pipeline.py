@@ -285,7 +285,7 @@ def build_pipeline(
                           parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs,
                           mms_tts_handler_kwargs, openai_tts_handler_kwargs, elevenlabs_tts_handler_kwargs)
     b = B()
-    return ThreadManager([*comms_handlers, vad, stt, lm, tts, b])
+    return ThreadManager([b])
 
 
 def get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs,

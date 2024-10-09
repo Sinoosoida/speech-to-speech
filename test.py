@@ -27,18 +27,9 @@ class BaseHandler:
             for future in futures:
                 result = future.result()
                 print(result)
+            executor.shutdown(wait=True)
         print("Thread finished")
 
     def run(self, *args, **kwargs ):
         self.thread_function()
-        # Rest of your run method
-#
-# if __name__ == "__main__":
-#     handler = BaseHandler()
-#     handler_thread = threading.Thread(target=handler.run, daemon=False)
-#     handler_thread.start()
-#
-#     # Wait for the handler thread to finish
-#     handler_thread.join()
-#
-#     print("Main thread finished")
+
