@@ -34,6 +34,7 @@ class BaseHandler:
             # Initialize thread pool for parallel processing
             self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=threads)
 
+
     def setup(self, *args, **kwargs):
         pass
 
@@ -75,6 +76,7 @@ class BaseHandler:
         self.queue_out.put(b"END")
 
     def process_and_write(self, input_data, seq):
+        logger.debug("1.2")
         start_time = perf_counter()
         buffer = deque()  # Internal buffer for storing chunks
         first_chunk = True
