@@ -433,7 +433,7 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
             stop_event,
             queue_in=lm_response_queue,
             queue_out=send_audio_chunks_queue,
-            threads=1,
+            threads=2,
             setup_args=(should_listen,),
             setup_kwargs=vars(elevenlabs_tts_handler_kwargs),
         )
