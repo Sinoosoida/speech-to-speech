@@ -52,7 +52,9 @@ class BaseHandler:
             if self.threads > 1:
                 seq = self.sequence_counter
                 self.sequence_counter += 1
+                logger.debug("1")
                 self.executor.submit(self.process_and_write, input_data, seq)
+                logger.debug("2")
             else:
                 start_time = perf_counter()
                 first_chunk = True
