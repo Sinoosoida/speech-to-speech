@@ -500,6 +500,7 @@ def main():
 
     try:
         pipeline_manager.start()
+        input()
     except KeyboardInterrupt:
         pipeline_manager.stop()
 
