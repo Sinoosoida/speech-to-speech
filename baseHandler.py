@@ -1,3 +1,4 @@
+import time
 from time import perf_counter
 import logging
 import threading
@@ -61,13 +62,13 @@ class BaseHandler:
                 for output in self.process(input_data):
                     self._times.append(perf_counter() - start_time)
                     if first_chunk:
-                        logger.debug(f"{self.__class__.__name__} started output after: {self.last_time:.3f} s")
+                        logger.debug(f"{self.__class__.__name__} started output after: {time.time()-start_time:.3f} s")
                         first_chunk = False
                     if self.last_time > self.min_time_to_debug:
                         logger.debug(f"{self.__class__.__name__}: {self.last_time:.3f} s")
                     self.queue_out.put(output)
                     start_time = perf_counter()
-                logger.debug(f"{self.__class__.__name__} ended output after: {self.last_time:.3f} s")
+                logger.debug(f"{self.__class__.__name__} ended output after: {time.time()-start_time:.3f} s")
 
         if self.threads > 1:
             self.executor.shutdown(wait=True)
