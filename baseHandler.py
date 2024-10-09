@@ -4,7 +4,7 @@ import threading
 from queue import Queue
 from collections import deque  # Added for efficient buffer management
 import concurrent.futures
-
+import time
 logger = logging.getLogger(__name__)
 
 class BaseHandler:
@@ -32,7 +32,7 @@ class BaseHandler:
             self.write_condition = threading.Condition(self.write_lock)  # Condition for notifying threads about write availability
 
             # Initialize thread pool for parallel processing
-            self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=threads)
+            # self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=threads)
 
 
     def setup(self, *args, **kwargs):
@@ -41,8 +41,31 @@ class BaseHandler:
     def process(self, input_data):
         raise NotImplementedError
 
+    def worker_task(self, name, duration):
+        print(f"Task {name} started")
+        time.sleep(duration)
+        print(f"Task {name} finished")
+        return f"Result of task {name}"
+
+    def thread_function(self):
+        print("Thread started")
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=30)
+        futures = []
+        for i in range(20):
+            # Отправляем задачи на выполнение в пул потоков
+            future = executor.submit(self.worker_task, f"Task-{i}", 1 + i * 0.5)
+            futures.append(future)
+
+        # Ждем завершения всех задач и получаем результаты
+        for future in futures:
+            result = future.result()
+            print(result)
+        executor.shutdown(wait=True)
+        print("Thread finished")
+
     def run(self):
         if self.threads > 1:
+            self.thread_function()
             # Initialize the executor within the run method
             self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.threads)
 
