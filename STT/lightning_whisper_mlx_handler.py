@@ -85,4 +85,4 @@ class LightningWhisperSTTHandler(BaseHandler):
         if self.start_language == "auto":
             language_code += "-auto"
                     
-        yield (pred_text, language_code)
+        yield {"text":pred_text,"language_code":None}

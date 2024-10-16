@@ -58,4 +58,4 @@ class ParaformerSTTHandler(BaseHandler):
         logger.debug("finished paraformer inference")
         console.print(f"[yellow]USER: {pred_text}")
 
-        yield pred_text
+        yield {"text":pred_text,"language_code":None}
