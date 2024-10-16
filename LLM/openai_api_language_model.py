@@ -84,9 +84,9 @@ class OpenApiModelHandler(BaseHandler):
 
             self.chat.append({"role": self.user_role, "content": prompt})
 
-            # # Add the start_phrase to the assistant's role to guide the model
-            # if start_phrase:
-            #     self.chat.append({"role": "assistant", "content": start_phrase})
+            # Add the start_phrase to the assistant's role to guide the model
+            if start_phrase:
+                self.chat.append({"role": "assistant", "content": start_phrase})
 
             # if start_phrase:
             #     init_chat_prompt += f" Always start your responses with: '{start_phrase}'"
