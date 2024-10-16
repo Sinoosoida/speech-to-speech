@@ -452,6 +452,8 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
 
 def get_filler_handler(module_kwargs, stop_event, text_prompt_queue, preprocessed_text_prompt_queue, send_audio_chunks_queue, filler_handler_kwargs):
     from FILLER_GEN.filler_generator import FillerHandler
+    print(filler_handler_kwargs)
+    print(vars(filler_handler_kwargs))
     return FillerHandler(
         stop_event,
         queue_in = text_prompt_queue,

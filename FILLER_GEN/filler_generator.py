@@ -32,6 +32,7 @@ class FillerHandler:
             audio_description_json_path="data/filler_data/description.json",
             activated=True,
             device="cuda",
+            gen_kwargs = {},
     ):
         self.audio_data_dir = audio_data_dir
         self.audio_description_json_path = audio_description_json_path
