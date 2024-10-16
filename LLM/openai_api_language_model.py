@@ -77,10 +77,14 @@ class OpenApiModelHandler(BaseHandler):
 
     def process(self, message):
             logger.debug("call api language model...")
+
             prompt = message.get("text")
             language_code = message.get("language_code")
             start_phrase = message.get("start_phrase")
-            start_phrase = None
+
+            logger.debug(f"prompt is {prompt}")
+            logger.debug(f"language_code is {language_code}")
+            logger.debug(f"start_phrase is {start_phrase}")
 
             self.chat.append({"role": self.user_role, "content": prompt})
 
