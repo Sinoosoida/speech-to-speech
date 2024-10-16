@@ -18,6 +18,7 @@ from arguments_classes.mlx_language_model_arguments import (
 )
 from arguments_classes.module_arguments import ModuleArguments
 from arguments_classes.paraformer_stt_arguments import ParaformerSTTHandlerArguments
+from arguments_classes.filler_arguments import FillerHandlerArguments
 from arguments_classes.parler_tts_arguments import ParlerTTSHandlerArguments
 from arguments_classes.socket_receiver_arguments import SocketReceiverArguments
 from arguments_classes.socket_sender_arguments import SocketSenderArguments
@@ -77,6 +78,7 @@ def parse_arguments():
             VADHandlerArguments,
             WhisperSTTHandlerArguments,
             ParaformerSTTHandlerArguments,
+            FillerHandlerArguments,
             LanguageModelHandlerArguments,
             OpenApiLanguageModelHandlerArguments,
             MLXLanguageModelHandlerArguments,
@@ -165,6 +167,7 @@ def prepare_all_args(
         module_kwargs,
         whisper_stt_handler_kwargs,
         paraformer_stt_handler_kwargs,
+        filler_handler_kwargs,
         language_model_handler_kwargs,
         open_api_language_model_handler_kwargs,
         mlx_language_model_handler_kwargs,
@@ -179,6 +182,7 @@ def prepare_all_args(
         module_kwargs,
         whisper_stt_handler_kwargs,
         paraformer_stt_handler_kwargs,
+        filler_handler_kwargs,
         language_model_handler_kwargs,
         open_api_language_model_handler_kwargs,
         mlx_language_model_handler_kwargs,
@@ -191,6 +195,7 @@ def prepare_all_args(
     )
 
     rename_args(whisper_stt_handler_kwargs, "stt")
+    rename_args(filler_handler_kwargs, "filler")
     rename_args(paraformer_stt_handler_kwargs, "paraformer_stt")
     rename_args(language_model_handler_kwargs, "lm")
     rename_args(mlx_language_model_handler_kwargs, "mlx_lm")
@@ -207,11 +212,12 @@ def initialize_queues_and_events():
     return {
         "stop_event": Event(),
         "should_listen": Event(),
-        "recv_audio_chunks_queue": Queue(), #Полученое аудио
-        "send_audio_chunks_queue": Queue(), #Отправленое аудио
-        "spoken_prompt_queue": Queue(),     #Куски речи
-        "text_prompt_queue": Queue(),       #Куски текст
-        "lm_response_queue": Queue(),       #Ответы LLM
+        "recv_audio_chunks_queue": Queue(),         #Полученое аудио
+        "send_audio_chunks_queue": Queue(),         #Отправленое аудио
+        "spoken_prompt_queue": Queue(),             #Куски речи
+        "text_prompt_queue": Queue(),               #Куски текст
+        "preprocessed_text_prompt_queue": Queue(),  #Куски предобработаного текста
+        "lm_response_queue": Queue(),               #Ответы LLM
     }
 
 
@@ -222,6 +228,7 @@ def build_pipeline(
         vad_handler_kwargs,
         whisper_stt_handler_kwargs,
         paraformer_stt_handler_kwargs,
+        filler_handler_kwargs,
         language_model_handler_kwargs,
         open_api_language_model_handler_kwargs,
         mlx_language_model_handler_kwargs,
@@ -239,6 +246,7 @@ def build_pipeline(
     send_audio_chunks_queue = queues_and_events["send_audio_chunks_queue"]
     spoken_prompt_queue = queues_and_events["spoken_prompt_queue"]
     text_prompt_queue = queues_and_events["text_prompt_queue"]
+    preprocessed_text_prompt_queue = queues_and_events["preprocessed_text_prompt_queue"]
     lm_response_queue = queues_and_events["lm_response_queue"]
     if module_kwargs.mode == "local":
         from connections.local_audio_streamer import LocalAudioStreamer
@@ -279,13 +287,15 @@ def build_pipeline(
 
     stt = get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs,
                           paraformer_stt_handler_kwargs)
-    lm = get_llm_handler(module_kwargs, stop_event, text_prompt_queue, lm_response_queue, language_model_handler_kwargs,
+    filler = get_filler_handler(module_kwargs, stop_event, text_prompt_queue, preprocessed_text_prompt_queue,
+                                send_audio_chunks_queue, filler_handler_kwargs)
+    lm = get_llm_handler(module_kwargs, stop_event, preprocessed_text_prompt_queue, lm_response_queue, language_model_handler_kwargs,
                          open_api_language_model_handler_kwargs, mlx_language_model_handler_kwargs)
     tts = get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chunks_queue, should_listen,
                           parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs,
                           mms_tts_handler_kwargs, openai_tts_handler_kwargs, elevenlabs_tts_handler_kwargs)
 
-    return ThreadManager([*comms_handlers, vad, stt, lm, tts])
+    return ThreadManager([*comms_handlers, vad, filler, stt, lm, tts])
 
 
 def get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs,
@@ -440,6 +450,16 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
     else:
         raise ValueError("The TTS should be either parler, melo or chatTTS")
 
+def get_filler_handler(module_kwargs, stop_event, text_prompt_queue, preprocessed_text_prompt_queue, send_audio_chunks_queue, filler_handler_kwargs):
+    from FILLER_GEN.filler_generator import FillerHandler
+    return FillerHandler(
+        stop_event,
+        queue_in = text_prompt_queue,
+        queue_out_mess = preprocessed_text_prompt_queue,
+        queue_out_audio = send_audio_chunks_queue,
+        setup_kwargs=vars(filler_handler_kwargs),
+    )
+
 
 def main():
     (
@@ -449,6 +469,7 @@ def main():
         vad_handler_kwargs,
         whisper_stt_handler_kwargs,
         paraformer_stt_handler_kwargs,
+        filler_handler_kwargs,
         language_model_handler_kwargs,
         open_api_language_model_handler_kwargs,
         mlx_language_model_handler_kwargs,
@@ -466,6 +487,7 @@ def main():
         module_kwargs,
         whisper_stt_handler_kwargs,
         paraformer_stt_handler_kwargs,
+        filler_handler_kwargs,
         language_model_handler_kwargs,
         open_api_language_model_handler_kwargs,
         mlx_language_model_handler_kwargs,
@@ -486,6 +508,7 @@ def main():
         vad_handler_kwargs,
         whisper_stt_handler_kwargs,
         paraformer_stt_handler_kwargs,
+        filler_handler_kwargs,
         language_model_handler_kwargs,
         open_api_language_model_handler_kwargs,
         mlx_language_model_handler_kwargs,

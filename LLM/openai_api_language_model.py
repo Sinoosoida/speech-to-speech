@@ -9,19 +9,10 @@ from openai import OpenAI
 from baseHandler import BaseHandler
 from LLM.chat import Chat
 import os
+import copy
 logger = logging.getLogger(__name__)
 
 console = Console()
-
-WHISPER_LANGUAGE_TO_LLM_LANGUAGE = {
-    "en": "english",
-    "fr": "french",
-    "es": "spanish",
-    "zh": "chinese",
-    "ja": "japanese",
-    "ko": "korean",
-    "ru": "russian",
-}
 
 class OpenApiModelHandler(BaseHandler):
     """
@@ -82,15 +73,23 @@ class OpenApiModelHandler(BaseHandler):
         logger.info(
             f"{self.__class__.__name__}:  warmed up! time: {(end - start):.3f} s"
         )
-    def process(self, prompt):
+
+
+    def process(self, message):
             logger.debug("call api language model...")
+            prompt = message.get("text")
+            language_code = message.get("language_code")
+            start_phrase = message.get("start_phrase")
+            start_phrase = None
+
             self.chat.append({"role": self.user_role, "content": prompt})
 
-            language_code = None
-            if isinstance(prompt, tuple):
-                prompt, language_code = prompt
-                if language_code[-5:] == "-auto":
-                    language_code = language_code[:-5]
+            # # Add the start_phrase to the assistant's role to guide the model
+            # if start_phrase:
+            #     self.chat.append({"role": "assistant", "content": start_phrase})
+
+            # if start_phrase:
+            #     init_chat_prompt += f" Always start your responses with: '{start_phrase}'"
 
             response = self.client.chat.completions.create(
                 model=self.model_name,
@@ -114,8 +113,6 @@ class OpenApiModelHandler(BaseHandler):
                         if first_sentence:  # Добавлено: вывод информации о первом чанке
                             logger.debug(f"First sentence received")
                             first_sentence = False
-
-                        # yield sentences[0], language_code
                         yield sentences[0]
                         printable_text = new_text
 
