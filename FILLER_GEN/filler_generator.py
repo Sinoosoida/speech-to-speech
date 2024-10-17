@@ -138,7 +138,8 @@ class FillerHandler:
             start_time = perf_counter()
 
         self.cleanup()
-        self.queue_out.put(b"END")
+        self.queue_out_mess.put(b"END")
+        self.queue_out_audio.put(b"END")
 
     @property
     def last_time(self):
