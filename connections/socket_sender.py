@@ -42,6 +42,7 @@ class SocketSender:
         seconds_of_users_audio = 0
         while not self.stop_event.is_set():
             audio_chunk = self.queue_in.get()
+            logger.debug(f"got audio chunk")
             chunk_duration = len(audio_chunk) / (self.sample_rate * self.bytes_per_sample)
 
             if (time.time() - start_time) > (seconds_of_users_audio - self.buffer_time):
@@ -55,7 +56,9 @@ class SocketSender:
                 break
 
             seconds_of_users_audio += chunk_duration
+            logger.debug(f"sending audio chunk")
             self.conn.sendall(audio_chunk)
+            logger.debug(f"sended audio chunk")
             if isinstance(audio_chunk, bytes) and audio_chunk == b"END":
                 break
         self.conn.close()

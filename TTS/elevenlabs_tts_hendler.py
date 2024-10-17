@@ -80,6 +80,9 @@ class ElevenLabsTTSHandler(BaseHandler):
                     buffer += chunk
                     even_chunk = buffer[:(len(buffer) // 2) * 2]
                     audio_chunk = np.frombuffer(even_chunk, dtype='<i2')  # 16-битные целые числа, little-endian
+                    if first_chunk:  # Добавлено: вывод информации о первом чанке
+                        logger.debug(f"First chunk processed and returned")
+                        first_chunk = False
                     yield audio_chunk
                     buffer = buffer[(len(buffer) // 2) * 2:]
 
