@@ -52,6 +52,8 @@ os.environ["TORCHINDUCTOR_CACHE_DIR"] = os.path.join(CURRENT_DIR, "tmp")
 console = Console()
 logging.getLogger("numba").setLevel(logging.WARNING)  # quiet down numba logs
 
+multiprocessing_manager = multiprocessing.Manager()
+
 def rename_args(args, prefix):
     """
     Rename arguments by removing the prefix and prepares the gen_kwargs.
@@ -240,7 +242,6 @@ def build_pipeline(
         openai_tts_handler_kwargs,
         elevenlabs_tts_handler_kwargs,
         queues_and_events,
-        multiprocessing_manager
 ):
     stop_event = queues_and_events["stop_event"]
     should_listen = queues_and_events["should_listen"]
@@ -292,7 +293,7 @@ def build_pipeline(
     stt = get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs,
                           paraformer_stt_handler_kwargs)
     
-    filler = get_filler_handler(module_kwargs, stop_event, multiprocessing_manager, text_prompt_queue, preprocessed_text_prompt_queue,
+    filler = get_filler_handler(module_kwargs, stop_event, text_prompt_queue, preprocessed_text_prompt_queue,
                                 audio_response_queue_of_iterators, filler_handler_kwargs)
     
     lm = get_llm_handler(module_kwargs, stop_event, preprocessed_text_prompt_queue, lm_response_queue, language_model_handler_kwargs,
@@ -469,6 +470,7 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
             raise e
         return ElevenLabsTTSHandler(
             stop_event,
+            manager=multiprocessing_manager,
             queue_in=lm_response_queue,
             queue_out=send_audio_chunks_queue,
             threads=2,
@@ -478,11 +480,11 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
     else:
         raise ValueError("The TTS should be either parler, melo or chatTTS")
 
-def get_filler_handler(module_kwargs, stop_event, multiprocessing_manager, text_prompt_queue, preprocessed_text_prompt_queue, send_audio_chunks_queue, filler_handler_kwargs):
+def get_filler_handler(module_kwargs, stop_event, text_prompt_queue, preprocessed_text_prompt_queue, send_audio_chunks_queue, filler_handler_kwargs):
     from FILLER_GEN.filler_generator import FillerHandler
     return FillerHandler(
         stop_event,
-        multiprocessing_manager,
+        manager=multiprocessing_manager,
         queue_in = text_prompt_queue,
         queue_out_mess = preprocessed_text_prompt_queue,
         queue_out_audio = send_audio_chunks_queue,
@@ -548,8 +550,7 @@ def main():
         mms_tts_handler_kwargs,
         openai_tts_handler_kwargs,
         elevenlabs_tts_handler_kwargs,
-        queues_and_events,
-        multiprocessing_manager
+        queues_and_events
     )
 
     try:
