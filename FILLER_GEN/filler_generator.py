@@ -104,11 +104,11 @@ class FillerHandler:
 
                         # to return iterator
                         iterator = ProcessIterator(self.manager)
-                        self.queue_out_audio.put(iterator)
                         iterator.put(audio_data)
                         iterator.close()
-
                         logger.debug(f"Added audio data from file: {audio_filename}")
+                        self.queue_out_audio.put(iterator)
+
                     except Exception as e:
                         logger.error(f"Error reading audio file {audio_filename}: {e}")
                         self.stop_event.set()

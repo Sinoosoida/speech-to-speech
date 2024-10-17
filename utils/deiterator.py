@@ -21,6 +21,7 @@ class Deiterator:
             for chunk in iterator:
                 counter+=1
                 self.queue_out.put(chunk)
+                logger.debug(f"Chunk {counter}.")
             logger.debug(f"Iterating stoped, was created {counter} chunks out of one")
         # Отправляем сигнал остановки следующему компоненту
         self.queue_out.put(b"END")
