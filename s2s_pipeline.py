@@ -34,6 +34,7 @@ from transformers import (
 )
 
 from utils.thread_manager import ThreadManager
+from utils.deiterator import Deiterator
 
 # Ensure that the necessary NLTK resources are available
 try:
@@ -218,6 +219,7 @@ def initialize_queues_and_events():
         "text_prompt_queue": Queue(),               #Куски текст
         "preprocessed_text_prompt_queue": Queue(),  #Куски предобработаного текста
         "lm_response_queue": Queue(),               #Ответы LLM
+        "audio_response_queue_of_iterators": Queue(),
     }
 
 
@@ -248,6 +250,7 @@ def build_pipeline(
     text_prompt_queue = queues_and_events["text_prompt_queue"]
     preprocessed_text_prompt_queue = queues_and_events["preprocessed_text_prompt_queue"]
     lm_response_queue = queues_and_events["lm_response_queue"]
+    audio_response_queue_of_iterators = queues_and_events["audio_response_queue_of_iterators"]
     if module_kwargs.mode == "local":
         from connections.local_audio_streamer import LocalAudioStreamer
 
@@ -287,15 +290,20 @@ def build_pipeline(
 
     stt = get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs,
                           paraformer_stt_handler_kwargs)
+    
     filler = get_filler_handler(module_kwargs, stop_event, text_prompt_queue, preprocessed_text_prompt_queue,
-                                send_audio_chunks_queue, filler_handler_kwargs)
+                                audio_response_queue_of_iterators, filler_handler_kwargs)
+    
     lm = get_llm_handler(module_kwargs, stop_event, preprocessed_text_prompt_queue, lm_response_queue, language_model_handler_kwargs,
                          open_api_language_model_handler_kwargs, mlx_language_model_handler_kwargs)
-    tts = get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chunks_queue, should_listen,
+    
+    tts = get_tts_handler(module_kwargs, stop_event, lm_response_queue, audio_response_queue_of_iterators, should_listen,
                           parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs,
-                          mms_tts_handler_kwargs, openai_tts_handler_kwargs, elevenlabs_tts_handler_kwargs)
+                          mms_tts_handler_kwargs, openai_tts_handler_kwargs, elevenlabs_tts_handler_kwargs, iterated = True)
+    
+    deiterator = Deiterator(stop_event, audio_response_queue_of_iterators, send_audio_chunks_queue)
 
-    return ThreadManager([*comms_handlers, vad, filler, stt, lm, tts])
+    return ThreadManager([*comms_handlers, vad, stt, filler, lm, tts, deiterator])
 
 
 def get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs,
@@ -369,8 +377,9 @@ def get_llm_handler(
 
 def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chunks_queue, should_listen,
                     parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs, mms_tts_handler_kwargs,
-                    openai_tts_handler_kwargs, elevenlabs_tts_handler_kwargs):
+                    openai_tts_handler_kwargs, elevenlabs_tts_handler_kwargs, iterated = False):
     if module_kwargs.tts == "parler":
+        assert not iterated
         from TTS.parler_handler import ParlerTTSHandler
         return ParlerTTSHandler(
             stop_event,
@@ -380,6 +389,7 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
             setup_kwargs=vars(parler_tts_handler_kwargs),
         )
     elif module_kwargs.tts == "melo":
+        assert not iterated
         try:
             from TTS.melo_handler import MeloTTSHandler
         except RuntimeError as e:
@@ -395,6 +405,7 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
             setup_kwargs=vars(melo_tts_handler_kwargs),
         )
     elif module_kwargs.tts == "chatTTS":
+        assert not iterated
         try:
             from TTS.chatTTS_handler import ChatTTSHandler
         except RuntimeError as e:
@@ -408,6 +419,7 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
             setup_kwargs=vars(chat_tts_handler_kwargs),
         )
     elif module_kwargs.tts == "MMSTTS":
+        assert not iterated
         try:
             from TTS.MMSTTS_Handler import MMSTTSHandler
         except RuntimeError as e:
@@ -421,6 +433,7 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
             setup_kwargs=vars(mms_tts_handler_kwargs),
         )
     elif module_kwargs.tts == "openaiTTS":
+        assert not iterated
         try:
             from TTS.openai_api_tts import OpenAITTSHandler
         except RuntimeError as e:
@@ -433,9 +446,23 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
             setup_args=(should_listen,),
             setup_kwargs=vars(openai_tts_handler_kwargs),
         )
-    elif module_kwargs.tts == "elevenlabsTTS":
+    elif module_kwargs.tts == "elevenlabsTTS" and not iterated:
         try:
             from TTS.elevenlabs_tts_hendler import ElevenLabsTTSHandler
+        except RuntimeError as e:
+            logger.error("Error importing ChatTTSHandler")
+            raise e
+        return ElevenLabsTTSHandler(
+            stop_event,
+            queue_in=lm_response_queue,
+            queue_out=send_audio_chunks_queue,
+            threads=2,
+            setup_args=(should_listen,),
+            setup_kwargs=vars(elevenlabs_tts_handler_kwargs),
+        )
+    elif module_kwargs.tts == "elevenlabsTTS" and iterated:
+        try:
+            from TTS.elevenlabs_tts_hendler_iterated import ElevenLabsTTSHandler
         except RuntimeError as e:
             logger.error("Error importing ChatTTSHandler")
             raise e

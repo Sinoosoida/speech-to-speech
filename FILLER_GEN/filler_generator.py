@@ -1,3 +1,4 @@
+from utils.process_iterator import ProcessIterator
 from time import perf_counter
 import logging
 import json
@@ -96,7 +97,16 @@ class FillerHandler:
                     try:
                         with open(audio_path, 'rb') as f:
                             audio_data = f.read()
-                        self.queue_out_audio.put(audio_data)
+
+                        # to return audio
+                        # self.queue_out_audio.put(audio_data) # to return audio
+
+                        # to return iterator
+                        iterator = ProcessIterator(self.manager)
+                        self.queue_out_audio.put(iterator)
+                        iterator.put(audio_data)
+                        iterator.close()
+
                         logger.debug(f"Added audio data from file: {audio_filename}")
                     except Exception as e:
                         logger.error(f"Error reading audio file {audio_filename}: {e}")
