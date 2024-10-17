@@ -88,8 +88,30 @@ class FillerHandler:
             else:
                 logger.warning(f"No 'text' field in random item: {random_item}")
 
+            # Read the audio file and put it into queue_out_audio
+            audio_filename = random_item.get('filename', None)
+            if audio_filename:
+                audio_path = os.path.join(self.audio_data_dir, audio_filename)
+                if os.path.isfile(audio_path):
+                    try:
+                        with open(audio_path, 'rb') as f:
+                            audio_data = f.read()
+                        self.queue_out_audio.put(audio_data)
+                        logger.debug(f"Added audio data from file: {audio_filename}")
+                    except Exception as e:
+                        logger.error(f"Error reading audio file {audio_filename}: {e}")
+                        self.stop_event.set()
+                        return
+                else:
+                    logger.error(f"Audio file not found: {audio_path}")
+                    self.stop_event.set()
+                    return
+            else:
+                logger.warning(f"No 'filename' in random item: {random_item}")
+                self.stop_event.set()
+                return
+
             self.queue_out_mess.put(input_data)
-            #TODO add audio to queue
 
     def run(self):
         while not self.stop_event.is_set():
