@@ -478,10 +478,11 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
     else:
         raise ValueError("The TTS should be either parler, melo or chatTTS")
 
-def get_filler_handler(module_kwargs, stop_event, text_prompt_queue, preprocessed_text_prompt_queue, send_audio_chunks_queue, filler_handler_kwargs):
+def get_filler_handler(module_kwargs, stop_event, manager, text_prompt_queue, preprocessed_text_prompt_queue, send_audio_chunks_queue, filler_handler_kwargs):
     from FILLER_GEN.filler_generator import FillerHandler
     return FillerHandler(
         stop_event,
+        manager,
         queue_in = text_prompt_queue,
         queue_out_mess = preprocessed_text_prompt_queue,
         queue_out_audio = send_audio_chunks_queue,
