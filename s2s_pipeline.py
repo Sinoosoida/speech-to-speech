@@ -511,7 +511,7 @@ def main():
     ) = parse_arguments()
 
     setup_logger(module_kwargs.log_level)
-    manager = multiprocessing.Manager()
+    multiprocessing_manager = multiprocessing.Manager()
 
     prepare_all_args(
         module_kwargs,
