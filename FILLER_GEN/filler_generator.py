@@ -19,9 +19,10 @@ class FillerHandler:
     The cleanup method handles stopping the handler, and b"END" is placed in the output queue.
     """
 
-    def __init__(self, stop_event, queue_in, queue_out_mess, queue_out_audio, setup_args=(), setup_kwargs={}):
+    def __init__(self, stop_event, manager, queue_in, queue_out_mess, queue_out_audio, setup_args=(), setup_kwargs={}):
         self.stop_event = stop_event
         self.queue_in = queue_in
+        self.manager = manager
         self.queue_out_mess = queue_out_mess
         self.queue_out_audio = queue_out_audio
         self.setup(*setup_args, **setup_kwargs)

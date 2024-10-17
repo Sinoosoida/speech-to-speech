@@ -32,7 +32,7 @@ from rich.console import Console
 from transformers import (
     HfArgumentParser,
 )
-
+import multiprocessing
 from utils.thread_manager import ThreadManager
 from utils.deiterator import Deiterator
 
@@ -52,6 +52,7 @@ os.environ["TORCHINDUCTOR_CACHE_DIR"] = os.path.join(CURRENT_DIR, "tmp")
 console = Console()
 logging.getLogger("numba").setLevel(logging.WARNING)  # quiet down numba logs
 
+manager = multiprocessing.Manager()
 
 def rename_args(args, prefix):
     """
@@ -291,7 +292,7 @@ def build_pipeline(
     stt = get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs,
                           paraformer_stt_handler_kwargs)
     
-    filler = get_filler_handler(module_kwargs, stop_event, text_prompt_queue, preprocessed_text_prompt_queue,
+    filler = get_filler_handler(module_kwargs, stop_event, manager, text_prompt_queue, preprocessed_text_prompt_queue,
                                 audio_response_queue_of_iterators, filler_handler_kwargs)
     
     lm = get_llm_handler(module_kwargs, stop_event, preprocessed_text_prompt_queue, lm_response_queue, language_model_handler_kwargs,
