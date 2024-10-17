@@ -243,6 +243,7 @@ def build_pipeline(
         elevenlabs_tts_handler_kwargs,
         queues_and_events,
 ):
+
     stop_event = queues_and_events["stop_event"]
     should_listen = queues_and_events["should_listen"]
     recv_audio_chunks_queue = queues_and_events["recv_audio_chunks_queue"]
@@ -513,7 +514,6 @@ def main():
     ) = parse_arguments()
 
     setup_logger(module_kwargs.log_level)
-    multiprocessing_manager = multiprocessing.Manager()
 
     prepare_all_args(
         module_kwargs,
