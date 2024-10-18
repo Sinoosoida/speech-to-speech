@@ -17,14 +17,13 @@ class IteratorHandler:
     The cleanup method handles stopping the handler, and b"END" is placed in the output queue.
     """
 
-    def __init__(self, stop_event, queue_in, queue_out, manager=None, threads=1, setup_args=(), setup_kwargs={}):
+    def __init__(self, stop_event, queue_in, queue_out, threads=1, setup_args=(), setup_kwargs={}):
         self.stop_event = stop_event
         self.queue_in = queue_in
         self.queue_out = queue_out
         self.setup(*setup_args, **setup_kwargs)
         self._times = []
         self.threads = threads
-        self.manager = manager
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=threads)
 
     def setup(self, *args, **kwargs):

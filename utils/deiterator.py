@@ -14,7 +14,5 @@ class DeiteratorHandler(BaseHandler):
 
     def process(self, iterator):
         for chunk in iterator:
-            if self._stop_event.is_set():
-                break
-            self.output_queue.put(chunk)
+            yield chunk
 
