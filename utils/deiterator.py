@@ -5,7 +5,8 @@ logger = logging.getLogger(__name__)
 
 
 class DeiteratorHandler(BaseHandler):
-    def __init__(self):
+
+    def setup(self):
         pass
 
     def warmup(self):
