@@ -1,19 +1,32 @@
-class ProcessIterator:
-    def __init__(self, manager):
-        self.queue = manager.Queue()
-        self._sentinel = '<END_OF_ITERATOR>'
+from queue import Queue, Empty
 
-    def put(self, item):
-        self.queue.put(item)
+
+class ProcessIterator:
+    """
+    Итератор, который хранит и выдает чанки данных.
+    """
+
+    def __init__(self):
+        self.chunk_queue = Queue()
+        self._sentinel = object()
+
+    def put(self, chunk):
+        """
+        Добавляет чанк в итератор.
+        """
+        self.chunk_queue.put(chunk)
 
     def close(self):
-        self.queue.put(self._sentinel)
+        """
+        Помечает итератор как закрытый (больше данных не будет).
+        """
+        self.chunk_queue.put(self._sentinel)
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        item = self.queue.get()
-        if item == self._sentinel:
+        chunk = self.chunk_queue.get()
+        if chunk is self._sentinel:
             raise StopIteration
-        return item
+        return chunk

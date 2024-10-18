@@ -32,9 +32,8 @@ from rich.console import Console
 from transformers import (
     HfArgumentParser,
 )
-import multiprocessing
 from utils.thread_manager import ThreadManager
-from utils.deiterator import Deiterator
+from utils.deiterator import DeiteratorHandler
 
 # Ensure that the necessary NLTK resources are available
 try:
@@ -52,7 +51,6 @@ os.environ["TORCHINDUCTOR_CACHE_DIR"] = os.path.join(CURRENT_DIR, "tmp")
 console = Console()
 logging.getLogger("numba").setLevel(logging.WARNING)  # quiet down numba logs
 
-multiprocessing_manager = multiprocessing.Manager()
 
 def rename_args(args, prefix):
     """
@@ -304,7 +302,7 @@ def build_pipeline(
                           parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs,
                           mms_tts_handler_kwargs, openai_tts_handler_kwargs, elevenlabs_tts_handler_kwargs, iterated = True)
     
-    deiterator = Deiterator(stop_event, audio_response_queue_of_iterators, send_audio_chunks_queue)
+    deiterator = DeiteratorHandler(stop_event, audio_response_queue_of_iterators, send_audio_chunks_queue)
 
     return ThreadManager([*comms_handlers, vad, stt, filler, lm, tts, deiterator])
 
@@ -471,7 +469,6 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
             raise e
         return ElevenLabsTTSHandler(
             stop_event,
-            manager=multiprocessing_manager,
             queue_in=lm_response_queue,
             queue_out=send_audio_chunks_queue,
             threads=2,
@@ -485,7 +482,6 @@ def get_filler_handler(module_kwargs, stop_event, text_prompt_queue, preprocesse
     from FILLER_GEN.filler_generator import FillerHandler
     return FillerHandler(
         stop_event,
-        manager=multiprocessing_manager,
         queue_in = text_prompt_queue,
         queue_out_mess = preprocessed_text_prompt_queue,
         queue_out_audio = send_audio_chunks_queue,

@@ -19,10 +19,9 @@ class FillerHandler:
     The cleanup method handles stopping the handler, and b"END" is placed in the output queue.
     """
 
-    def __init__(self, stop_event, manager, queue_in, queue_out_mess, queue_out_audio, setup_args=(), setup_kwargs={}):
+    def __init__(self, stop_event, queue_in, queue_out_mess, queue_out_audio, setup_args=(), setup_kwargs={}):
         self.stop_event = stop_event
         self.queue_in = queue_in
-        self.manager = manager
         self.queue_out_mess = queue_out_mess
         self.queue_out_audio = queue_out_audio
         self.setup(*setup_args, **setup_kwargs)
@@ -103,7 +102,7 @@ class FillerHandler:
                         # self.queue_out_audio.put(audio_data) # to return audio
 
                         # to return iterator
-                        iterator = ProcessIterator(self.manager)
+                        iterator = ProcessIterator()
                         iterator.put(audio_data)
                         iterator.close()
                         logger.debug(f"Added audio data from file: {audio_filename}")

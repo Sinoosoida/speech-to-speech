@@ -43,7 +43,7 @@ class IteratorHandler:
                 logger.debug("Stopping thread")
                 break
 
-            iterator = ProcessIterator(self.manager)
+            iterator = ProcessIterator()
             self.queue_out.put(iterator)
             self.executor.submit(self.process_and_write, input_data, iterator)
 
