@@ -4,6 +4,7 @@ import threading
 from queue import Queue
 from collections import deque  # Added for efficient buffer management
 import concurrent.futures
+from utils.data import ImmutableDataChain
 
 logger = logging.getLogger(__name__)
 
@@ -42,28 +43,29 @@ class BaseHandler:
 
     def run(self):
         while not self.stop_event.is_set():
-            input_data = self.queue_in.get()
+            input_data_chain = self.queue_in.get()
 
-            if isinstance(input_data, bytes) and input_data == b"END":
+            if isinstance(input_data_chain, bytes) and input_data_chain == b"END":
                 # Sentinel signal to avoid queue deadlock
-                logger.debug("Stopping thread")
+                logger.debug(f"Stopping thread {self.__class__.__name__}")
                 break
+
 
             if self.threads > 1:
                 seq = self.sequence_counter
                 self.sequence_counter += 1
-                self.executor.submit(self.process_and_write, input_data, seq)
+                self.executor.submit(self.process_and_write, input_data_chain, seq)
             else:
                 start_time = perf_counter()
                 first_chunk = True
-                for output in self.process(input_data):
+                for output in self.process(input_data_chain.get_data()):
                     if first_chunk:
                         logger.debug(f"{self.__class__.__name__} started output after: {self.last_time:.3f} s")
                         first_chunk = False
                     self._times.append(perf_counter() - start_time)
                     if self.last_time > self.min_time_to_debug:
                         logger.debug(f"{self.__class__.__name__}: {self.last_time:.3f} s")
-                    self.queue_out.put(output)
+                    self.queue_out.put(input_data_chain.add_data(output, self.__class__.__name__))
                     start_time = perf_counter()
                 if self.last_time > self.min_time_to_debug:
                     logger.debug(f"{self.__class__.__name__} ended output after: {self.last_time:.3f} s")
@@ -73,14 +75,14 @@ class BaseHandler:
         self.cleanup()
         self.queue_out.put(b"END")
 
-    def process_and_write(self, input_data, seq):
+    def process_and_write(self, input_data_chain, seq):
         start_time = perf_counter()
         buffer = deque()  # Internal buffer for storing chunks
         first_chunk = True
         writing_directly = False  # Flag to indicate if we can write directly to queue_out
 
         try:
-            for chunk in self.process(input_data):
+            for chunk in self.process(input_data_chain.get_data()):
                 if first_chunk:
                     logger.debug(f"{self.__class__.__name__} started output after: {perf_counter() - start_time:.3f} s")
                     first_chunk = False
@@ -91,10 +93,10 @@ class BaseHandler:
                             # It's our turn now
                             # Write all buffered chunks
                             while buffer:
-                                self.queue_out.put(buffer.popleft())
+                                self.queue_out.put(input_data_chain.add_data(buffer.popleft(), self.__class__.__name__))
                             writing_directly = True
                         # Write current chunk
-                        self.queue_out.put(chunk)
+                        self.queue_out.put(input_data_chain.add_data(chunk, self.__class__.__name__))
                     else:
                         # Not our turn yet, buffer the chunk
                         buffer.append(chunk)
@@ -114,7 +116,7 @@ class BaseHandler:
             if not writing_directly:
                 # Write any buffered chunks
                 while buffer:
-                    self.queue_out.put(buffer.popleft())
+                    self.queue_out.put(input_data_chain.add_data(buffer.popleft(), self.__class__.__name__))
                 writing_directly = True
             # Update the next sequence number
             self.next_write_sequence += 1

@@ -9,6 +9,8 @@ from utils.utils import int2float
 from df.enhance import enhance, init_df
 import logging
 
+from utils.data import ImmutableDataChain
+
 logger = logging.getLogger(__name__)
 
 console = Console()
@@ -52,6 +54,8 @@ class VADHandler(BaseHandler):
         if audio_enhancement:
             self.enhanced_model, self.df_state, _ = init_df()
 
+        self.start_data = ImmutableDataChain()
+
     def process(self, audio_chunk):
         audio_int16 = np.frombuffer(audio_chunk, dtype=np.int16)
         audio_float32 = int2float(audio_int16)
@@ -89,7 +93,7 @@ class VADHandler(BaseHandler):
                             self.enhanced_model, self.df_state, audio_float32
                         )
                     array = enhanced.numpy().squeeze()
-                yield array
+                yield self.start_data.add_data(array, "VAD")
 
     @property
     def min_time_to_debug(self):

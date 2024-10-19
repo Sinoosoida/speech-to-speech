@@ -3,6 +3,7 @@ from rich.console import Console
 import logging
 import time
 from queue import Empty
+from utils.data import ImmutableDataChain
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class SocketSender:
         seconds_of_users_audio = 0
 
         while not self.stop_event.is_set():
-            audio_chunk = self.queue_in.get()
+            audio_chunk = self.queue_in.get().get_data()
             chunk_duration = len(audio_chunk) / (self.sample_rate * self.bytes_per_sample)
 
             #(time.time() - start_time) - время, которое прошло с начала передачи непрерывного аудио

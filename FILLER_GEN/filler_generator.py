@@ -4,6 +4,7 @@ import logging
 import json
 import os
 import random
+from utils.data import ImmutableDataChain
 
 logger = logging.getLogger(__name__)
 
@@ -67,14 +68,13 @@ class FillerHandler:
                 self.stop_event.set()
                 return
 
-    def process(self, input_data):
+    def process(self, input_data_chain):
         if not self.activated:
             # If the handler is deactivated, pass the data unchanged
-            self.queue_out_mess.put(input_data)
+            self.queue_out_mess.put(input_data_chain)
             return
         else:
-            assert isinstance(input_data, dict), "Input data must be a dictionary."
-
+            input_data = input_data_chain.get_data()
             if not self.audio_descriptions:
                 logger.error("Audio descriptions not loaded. Cannot process data.")
                 self.stop_event.set()
@@ -106,7 +106,7 @@ class FillerHandler:
                         iterator.put(audio_data)
                         iterator.close()
                         logger.debug(f"Added audio data from file: {audio_filename}")
-                        self.queue_out_audio.put(iterator)
+                        self.queue_out_audio.put(input_data_chain.add_data(iterator))
 
                     except Exception as e:
                         logger.error(f"Error reading audio file {audio_filename}: {e}")
@@ -125,13 +125,13 @@ class FillerHandler:
 
     def run(self):
         while not self.stop_event.is_set():
-            input = self.queue_in.get()
-            if isinstance(input, bytes) and input == b"END":
+            input_data_chain = self.queue_in.get()
+            if isinstance(input_data_chain, bytes) and input_data_chain == b"END":
                 # Sentinel signal to avoid queue deadlock
                 logger.debug("Stopping thread")
                 break
             start_time = perf_counter()
-            self.process(input)
+            self.process(input_data_chain)
             self._times.append(perf_counter() - start_time)
             if self.last_time > self.min_time_to_debug:
                 logger.debug(f"{self.__class__.__name__}: {self.last_time:.3f} s")
