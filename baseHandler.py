@@ -17,13 +17,15 @@ class BaseHandler:
     The cleanup method handles stopping the handler, and b"END" is placed in the output queue.
     """
 
-    def __init__(self, stop_event, queue_in, queue_out, threads=1, setup_args=(), setup_kwargs={}):
+    def __init__(self, stop_event, queue_in, queue_out, threads=1, use_data_chain=True, setup_args=(), setup_kwargs={}):
         self.stop_event = stop_event
         self.queue_in = queue_in
         self.queue_out = queue_out
         self.setup(*setup_args, **setup_kwargs)
         self._times = []
         self.threads = threads
+        self.data_chain_input = use_data_chain
+        self.data_chain_outupt = use_data_chain
 
         if self.threads > 1:
             # Initialization for managing the write order
@@ -58,14 +60,23 @@ class BaseHandler:
             else:
                 start_time = perf_counter()
                 first_chunk = True
-                for output in self.process(input_data_chain.get_data()):
+
+                if self.data_chain_input:
+                    input_data = input_data_chain.get_data()
+                else:
+                    input_data = input_data_chain
+
+                for output in self.process(input_data):
                     if first_chunk:
                         logger.debug(f"{self.__class__.__name__} started output after: {self.last_time:.3f} s")
                         first_chunk = False
                     self._times.append(perf_counter() - start_time)
                     if self.last_time > self.min_time_to_debug:
                         logger.debug(f"{self.__class__.__name__}: {self.last_time:.3f} s")
-                    self.queue_out.put(input_data_chain.add_data(output, self.__class__.__name__))
+                    if self.data_chain_outupt:
+                        self.queue_out.put(input_data_chain.add_data(output, self.__class__.__name__))
+                    else:
+                        self.queue_out.put(output)
                     start_time = perf_counter()
                 if self.last_time > self.min_time_to_debug:
                     logger.debug(f"{self.__class__.__name__} ended output after: {self.last_time:.3f} s")
@@ -82,7 +93,13 @@ class BaseHandler:
         writing_directly = False  # Flag to indicate if we can write directly to queue_out
 
         try:
-            for chunk in self.process(input_data_chain.get_data()):
+
+            if self.data_chain_input:
+                input_data = input_data_chain.get_data()
+            else:
+                input_data = input_data_chain
+
+            for chunk in self.process(input_data):
                 if first_chunk:
                     logger.debug(f"{self.__class__.__name__} started output after: {perf_counter() - start_time:.3f} s")
                     first_chunk = False
@@ -93,10 +110,17 @@ class BaseHandler:
                             # It's our turn now
                             # Write all buffered chunks
                             while buffer:
-                                self.queue_out.put(input_data_chain.add_data(buffer.popleft(), self.__class__.__name__))
+                                if self.data_chain_outupt:
+                                    self.queue_out.put(input_data_chain.add_data(buffer.popleft(), self.__class__.__name__))
+                                else:
+                                    self.queue_out.put(buffer.popleft())
                             writing_directly = True
                         # Write current chunk
-                        self.queue_out.put(input_data_chain.add_data(chunk, self.__class__.__name__))
+                        if self.data_chain_outupt:
+                            self.queue_out.put(input_data_chain.add_data(chunk, self.__class__.__name__))
+                        else:
+                            self.queue_out.put(chunk)
+
                     else:
                         # Not our turn yet, buffer the chunk
                         buffer.append(chunk)
@@ -116,7 +140,10 @@ class BaseHandler:
             if not writing_directly:
                 # Write any buffered chunks
                 while buffer:
-                    self.queue_out.put(input_data_chain.add_data(buffer.popleft(), self.__class__.__name__))
+                    if self.data_chain_outupt:
+                        self.queue_out.put(input_data_chain.add_data(buffer.popleft(), self.__class__.__name__))
+                    else:
+                        self.queue_out.put(buffer.popleft())
                 writing_directly = True
             # Update the next sequence number
             self.next_write_sequence += 1

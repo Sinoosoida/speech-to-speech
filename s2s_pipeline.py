@@ -288,6 +288,8 @@ def build_pipeline(
         stop_event,
         queue_in=recv_audio_chunks_queue,
         queue_out=spoken_prompt_queue,
+        threads=1,
+        use_data_chain=False,
         setup_args=(should_listen, is_speaking_event),
         setup_kwargs=vars(vad_handler_kwargs),
     )
