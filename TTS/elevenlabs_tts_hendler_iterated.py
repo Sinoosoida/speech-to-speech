@@ -64,8 +64,7 @@ class ElevenLabsTTSHandler(BaseHandler):
 
         iterator = ProcessIterator()
         try:
-            input_data.add_data(iterator, "output_audio_iterator")
-            yield input_data
+            yield input_data.add_data(iterator, "output_audio_iterator")
 
             audio = self.client.generate(
                 voice=self.voice,
