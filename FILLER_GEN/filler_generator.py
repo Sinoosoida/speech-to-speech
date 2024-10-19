@@ -121,7 +121,8 @@ class FillerHandler:
                 self.stop_event.set()
                 return
 
-            self.queue_out_mess.put(input_data)
+            #We changed input data dict in input_data_chain
+            self.queue_out_mess.put(input_data_chain)
 
     def run(self):
         while not self.stop_event.is_set():
