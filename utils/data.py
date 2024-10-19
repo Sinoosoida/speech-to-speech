@@ -1,15 +1,15 @@
 import threading
 
 class ImmutableDataChain:
-    def __init__(self, value=None, tag=None, save_data=True, previous=None, index=None):
+    def __init__(self, value=None, key=None, save_data=True, previous=None, index=None):
         """
-        tag - ключ значения. Может быть None, но это означает, что данные будут потеряны после add_data.
+        key - ключ значения. Может быть None, но это означает, что данные будут потеряны после add_data.
         value - сохраняемое значение.
         previous - ссылка на предыдущий экземпляр данных.
         index - индекс экземпляра класса в цепочке экземпляров, созданных из того же экземпляра с помощью add_data.
         save_data - если False, предыдущие данные не будут доступны в новом экземпляре.
         """
-        self._key = tag
+        self._key = key
         self._value = value
         self._previous = previous
         self.index = index
@@ -17,13 +17,13 @@ class ImmutableDataChain:
         self._save_data = save_data
         self._lock = threading.Lock()  # Блокировка для синхронизации
 
-    def add_data(self, value, tag, save_data=True):
+    def add_data(self, value, key=None, save_data=True):
         with self._lock:
             self._counter += 1
             if self._key is None or not self._save_data:
-                return ImmutableDataChain(value, tag, save_data, self._previous, self._counter)
+                return ImmutableDataChain(value, key, save_data, self._previous, self._counter)
             else:
-                return ImmutableDataChain(value, tag, save_data, self, self._counter)
+                return ImmutableDataChain(value, key, save_data, self, self._counter)
 
     def get_data(self, key=None):
         with self._lock:

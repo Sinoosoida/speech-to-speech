@@ -106,7 +106,7 @@ class FillerHandler:
                         iterator.put(audio_data)
                         iterator.close()
                         logger.debug(f"Added audio data from file: {audio_filename}")
-                        self.queue_out_audio.put(input_data_chain.add_data(iterator))
+                        self.queue_out_audio.put(input_data_chain.add_data(iterator, self.__class__.__name__))
 
                     except Exception as e:
                         logger.error(f"Error reading audio file {audio_filename}: {e}")
