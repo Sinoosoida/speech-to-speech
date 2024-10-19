@@ -307,7 +307,7 @@ def build_pipeline(
     
     deiterator = DeiteratorHandler(stop_event, audio_response_queue_of_iterators, send_audio_chunks_queue)
 
-    interruption_manager = InterruptionManagerHandler(stop_event, audio_response_queue_of_iterators)
+    interruption_manager = InterruptionManagerHandler(stop_event, is_speaking_event)
 
     return ThreadManager([*comms_handlers, vad, stt, filler, lm, tts, deiterator, interruption_manager])
 
