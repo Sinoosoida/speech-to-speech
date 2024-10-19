@@ -6,12 +6,14 @@ from rich.console import Console
 import time
 import httpx
 from elevenlabs.client import ElevenLabs
+from utils.process_iterator import ProcessIterator
+from utils.data import ImmutableDataChain
 import os
 
 logger = logging.getLogger(__name__)
 console = Console()
 
-class ElevenLabsTTSHandler(IteratorHandler):
+class ElevenLabsTTSHandler(BaseHandler):
     def setup(
         self,
         should_listen,
@@ -53,14 +55,18 @@ class ElevenLabsTTSHandler(IteratorHandler):
         except Exception as e:
             logger.error(f"Warmup {self.__class__.__name__} failed, {e}")
 
-    def process(self, llm_sentence):
+    def process(self, input_data: ImmutableDataChain):
 
-        if isinstance(llm_sentence, tuple):
-            llm_sentence, language_code = llm_sentence
+        llm_sentence = input_data.get("llm_sentence")
+        language_code = input_data.get("language_code")
 
         console.print(f"[green]ASSISTANT: {llm_sentence}")
 
+        iterator = ProcessIterator()
         try:
+            input_data.add_data(iterator, "output_audio_iterator")
+            yield input_data
+
             audio = self.client.generate(
                 voice=self.voice,
                 text=llm_sentence,
@@ -81,12 +87,14 @@ class ElevenLabsTTSHandler(IteratorHandler):
                     buffer += chunk
                     even_chunk = buffer[:(len(buffer) // 2) * 2]
                     audio_chunk = np.frombuffer(even_chunk, dtype='<i2')  # 16-битные целые числа, little-endian
-                    yield audio_chunk
+                    iterator.put(audio_chunk)
                     buffer = buffer[(len(buffer) // 2) * 2:]
 
             logger.debug(f"All chunck recived")
+            iterator.close()
         except Exception as e:
             logger.error(f"Error in ElevenLabsTTSHandler: {e}")
+            iterator.close()
             self.should_listen.set()
             return
 

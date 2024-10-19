@@ -93,7 +93,7 @@ class VADHandler(BaseHandler):
                             self.enhanced_model, self.df_state, audio_float32
                         )
                     array = enhanced.numpy().squeeze()
-                yield self.start_data.add_data(array, "VAD")
+                yield self.start_data.add_data(array, "user_audio")
 
     @property
     def min_time_to_debug(self):

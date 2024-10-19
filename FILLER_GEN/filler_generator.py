@@ -68,13 +68,13 @@ class FillerHandler:
                 self.stop_event.set()
                 return
 
-    def process(self, input_data_chain):
+    def process(self, data: ImmutableDataChain):
         if not self.activated:
             # If the handler is deactivated, pass the data unchanged
-            self.queue_out_mess.put(input_data_chain)
+            self.queue_out_mess.put(data)
             return
         else:
-            input_data = input_data_chain.get_data()
+            # input_data = data.get_data()
             if not self.audio_descriptions:
                 logger.error("Audio descriptions not loaded. Cannot process data.")
                 self.stop_event.set()
@@ -84,7 +84,7 @@ class FillerHandler:
             random_item = random.choice(self.audio_descriptions)
             text_content = random_item.get('text', '')
             if text_content:
-                input_data["start_phrase"] = text_content
+                self.queue_out_mess.put(data.add_data(text_content, "start_phrase"))
                 logger.debug(f"Added start_phrase: {text_content}")
             else:
                 logger.warning(f"No 'text' field in random item: {random_item}")
@@ -98,15 +98,12 @@ class FillerHandler:
                         with open(audio_path, 'rb') as f:
                             audio_data = f.read()
 
-                        # to return audio
-                        # self.queue_out_audio.put(audio_data) # to return audio
-
                         # to return iterator
                         iterator = ProcessIterator()
                         iterator.put(audio_data)
                         iterator.close()
                         logger.debug(f"Added audio data from file: {audio_filename}")
-                        self.queue_out_audio.put(input_data_chain.add_data(iterator, self.__class__.__name__))
+                        self.queue_out_audio.put(data.add_data(iterator, "output_audio_iterator"))
 
                     except Exception as e:
                         logger.error(f"Error reading audio file {audio_filename}: {e}")
@@ -120,9 +117,6 @@ class FillerHandler:
                 logger.warning(f"No 'filename' in random item: {random_item}")
                 self.stop_event.set()
                 return
-
-            #We changed input data dict in input_data_chain
-            self.queue_out_mess.put(input_data_chain)
 
     def run(self):
         while not self.stop_event.is_set():

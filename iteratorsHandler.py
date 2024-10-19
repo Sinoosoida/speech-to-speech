@@ -5,7 +5,6 @@ from queue import Queue
 from collections import deque  # Added for efficient buffer management
 import concurrent.futures
 from utils.process_iterator import ProcessIterator
-from utils.data import ImmutableDataChain
 
 logger = logging.getLogger(__name__)
 
@@ -30,22 +29,22 @@ class IteratorHandler:
     def setup(self, *args, **kwargs):
         pass
 
-    def process(self, input_data_chain):
+    def process(self, input_data):
         raise NotImplementedError
 
     def run(self):
         while not self.stop_event.is_set():
-            input_data_chain = self.queue_in.get()
+            input_data = self.queue_in.get()
 
-            if isinstance(input_data_chain, bytes) and input_data_chain == b"END":
+            if isinstance(input_data, bytes) and input_data == b"END":
                 # Sentinel signal to avoid queue deadlock
                 # self.stop_event.set()
                 logger.debug("Stopping thread")
                 break
 
             iterator = ProcessIterator()
-            self.queue_out.put(input_data_chain.add_data(iterator, self.__class__.__name__))
-            self.executor.submit(self.process_and_write, input_data_chain.get_data(), iterator)
+            self.queue_out.put(iterator)
+            self.executor.submit(self.process_and_write, input_data, iterator)
 
         self.executor.shutdown(wait=True)
         self.cleanup()

@@ -44,3 +44,26 @@ class ImmutableDataChain:
                     data_dict[current._key] = current._value
                 current = current._previous
             return data_dict
+
+    def get(self, key, default=None):
+        value = self.get_data(key)
+        return value if value is not None else default
+
+    def __getitem__(self, key):
+        value = self.get_data(key)
+        if value is None:
+            raise KeyError(f"Ключ '{key}' не найден")
+        return value
+
+    def __setitem__(self, key, value):
+        return self.add_data(value, key)
+
+example_data = {
+    "user_audio":None,
+    "text":None,
+    "language_code":None,
+    "start_phrase":None,
+    "llm_sentence":None,
+    "output_audio_iterator": None,
+    "output_audio_chunk":None
+}

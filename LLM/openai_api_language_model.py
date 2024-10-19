@@ -10,6 +10,7 @@ from baseHandler import BaseHandler
 from LLM.chat import Chat
 import os
 import copy
+from utils.data import ImmutableDataChain
 logger = logging.getLogger(__name__)
 
 console = Console()
@@ -75,12 +76,12 @@ class OpenApiModelHandler(BaseHandler):
         )
 
 
-    def process(self, message):
+    def process(self, data : ImmutableDataChain):
             logger.debug("call api language model...")
 
-            prompt = message.get("text")
-            language_code = message.get("language_code")
-            start_phrase = message.get("start_phrase")
+            prompt = data.get("text")
+            language_code = data.get("language_code")
+            start_phrase = data.get("start_phrase")
 
             logger.debug(f"prompt is {prompt}")
             logger.debug(f"language_code is {language_code}")
@@ -117,15 +118,15 @@ class OpenApiModelHandler(BaseHandler):
                         if first_sentence:  # Добавлено: вывод информации о первом чанке
                             logger.debug(f"First sentence received")
                             first_sentence = False
-                        yield sentences[0]
+                        yield data.add_data(sentences[0],"llm_sentence")
                         printable_text = new_text
 
                 logger.debug(f"All chunks received")
                 self.chat.append({"role": "assistant", "content": generated_text})
                 # don't forget last sentence
-                yield printable_text, language_code
+                yield data.add_data(printable_text,"llm_sentence")
             else:
                 generated_text = response.choices[0].message.content
                 self.chat.append({"role": "assistant", "content": generated_text})
-                yield generated_text, language_code
+                yield data.add_data(generated_text, "llm_sentence")
 

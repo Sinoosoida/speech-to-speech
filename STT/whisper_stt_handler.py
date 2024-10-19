@@ -8,6 +8,7 @@ from copy import copy
 from baseHandler import BaseHandler
 from rich.console import Console
 import logging
+from utils.data import ImmutableDataChain
 
 logger = logging.getLogger(__name__)
 console = Console()
@@ -109,7 +110,8 @@ class WhisperSTTHandler(BaseHandler):
                 f"{self.__class__.__name__}:  warmed up! time: {start_event.elapsed_time(end_event) * 1e-3:.3f} s"
             )
 
-    def process(self, spoken_prompt):
+    def process(self, data : ImmutableDataChain):
+        spoken_prompt = data.get("user_audio")
         logger.debug("infering whisper...")
 
         global pipeline_start
@@ -139,5 +141,5 @@ class WhisperSTTHandler(BaseHandler):
 
         if self.start_language == "auto":
             language_code += "-auto"
-            
-        yield {"text":pred_text,"language_code":language_code}
+
+        yield data.add_data(pred_text, "text") #.add_data(language_code, "language_code")
