@@ -34,6 +34,7 @@ from transformers import (
 )
 from utils.thread_manager import ThreadManager
 from utils.deiterator import DeiteratorHandler
+from INTERRUPTION.interruption_manager_handler import InterruptionManagerHandler
 
 # Ensure that the necessary NLTK resources are available
 try:
@@ -210,8 +211,9 @@ def prepare_all_args(
 
 def initialize_queues_and_events():
     return {
-        "stop_event": Event(),
-        "should_listen": Event(),
+        "stop_event": Event(),                      #Останавливает работу вообще всего навсегда
+        "should_listen": Event(),                   #Для того, чтобы не слушать пользователя
+        "is_speaking_event": Event(),               #Начал ли пользователь говорить. Если событие установлен, то vad гарантировано что-то выдаст, когда пользователь закончит говорить
         "recv_audio_chunks_queue": Queue(),         #Полученое аудио
         "send_audio_chunks_queue": Queue(),         #Отправленое аудио
         "spoken_prompt_queue": Queue(),             #Куски речи
@@ -244,6 +246,7 @@ def build_pipeline(
 
     stop_event = queues_and_events["stop_event"]
     should_listen = queues_and_events["should_listen"]
+    is_speaking_event = queues_and_events["is_speaking_event"]
     recv_audio_chunks_queue = queues_and_events["recv_audio_chunks_queue"]
     send_audio_chunks_queue = queues_and_events["send_audio_chunks_queue"]
     spoken_prompt_queue = queues_and_events["spoken_prompt_queue"]
@@ -285,7 +288,7 @@ def build_pipeline(
         stop_event,
         queue_in=recv_audio_chunks_queue,
         queue_out=spoken_prompt_queue,
-        setup_args=(should_listen,),
+        setup_args=(should_listen, is_speaking_event),
         setup_kwargs=vars(vad_handler_kwargs),
     )
 
@@ -304,7 +307,9 @@ def build_pipeline(
     
     deiterator = DeiteratorHandler(stop_event, audio_response_queue_of_iterators, send_audio_chunks_queue)
 
-    return ThreadManager([*comms_handlers, vad, stt, filler, lm, tts, deiterator])
+    interruption_manager = InterruptionManagerHandler(stop_event, audio_response_queue_of_iterators)
+
+    return ThreadManager([*comms_handlers, vad, stt, filler, lm, tts, deiterator, interruption_manager])
 
 
 def get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs,

@@ -1,5 +1,7 @@
 import torch
 
+from connections.socket_sender import logger
+
 
 class VADIterator:
     def __init__(
@@ -9,6 +11,8 @@ class VADIterator:
         sampling_rate: int = 16000,
         min_silence_duration_ms: int = 100,
         speech_pad_ms: int = 30,
+        is_speaking_event = None,
+        min_speech_ms: int = 1000,
     ):
         """
         Mainly taken from https://github.com/snakers4/silero-vad
@@ -36,12 +40,17 @@ class VADIterator:
         self.threshold = threshold
         self.sampling_rate = sampling_rate
         self.is_speaking = False
+        self.speech_start_sample = 0
         self.buffer = []
+        self.is_speaking_event = is_speaking_event
+        self.min_speech_ms = min_speech_ms
 
         if sampling_rate not in [8000, 16000]:
             raise ValueError(
                 "VADIterator does not support sampling rates other than [8000, 16000]"
             )
+        if is_speaking_event is None:
+            logger.debug("No speaking event in VAD")
 
         self.min_silence_samples = sampling_rate * min_silence_duration_ms / 1000
         self.speech_pad_samples = sampling_rate * speech_pad_ms / 1000
@@ -52,6 +61,8 @@ class VADIterator:
         self.triggered = False
         self.temp_end = 0
         self.current_sample = 0
+        self.samples_in_buffer = 0
+        self.event_set = False
 
     @torch.no_grad()
     def __call__(self, x):
@@ -74,27 +85,34 @@ class VADIterator:
 
         speech_prob = self.model(x, self.sampling_rate).item()
 
-        if (speech_prob >= self.threshold) and self.temp_end:
+        if (speech_prob >= self.threshold) and self.temp_end:#чел говорит, сдвигаем таймер времени с момента окончания речи
             self.temp_end = 0
 
-        if (speech_prob >= self.threshold) and not self.triggered:
+        if (speech_prob >= self.threshold) and not self.triggered:#чел начал говорить
             self.triggered = True
+            self.event_set = False
             return None
 
-        if (speech_prob < self.threshold - 0.15) and self.triggered:
+        if self.triggered and (self.samples_in_buffer / self.sampling_rate * 1000)  >= self.min_speech_ms and not self.event_set:
+            self.is_speaking_event.set()
+            self.event_set = True
+
+        if (speech_prob < self.threshold - 0.15) and self.triggered:#чел вроде закончил говорить
             if not self.temp_end:
-                self.temp_end = self.current_sample
+                self.temp_end = self.current_sample #запоминаем время, когда он закончил говорить
             if self.current_sample - self.temp_end < self.min_silence_samples:
-                return None
+                return None #если он не так много молчал, то ничего не возвращаем пока что
             else:
-                # end of speak
+                # end of speak тут он уже долго молчит
                 self.temp_end = 0
                 self.triggered = False
                 spoken_utterance = self.buffer
                 self.buffer = []
+                self.samples_in_buffer = 0
                 return spoken_utterance
 
         if self.triggered:
             self.buffer.append(x)
+            self.samples_in_buffer+=window_size_samples
 
         return None
