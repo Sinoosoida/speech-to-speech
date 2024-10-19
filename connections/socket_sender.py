@@ -40,15 +40,20 @@ class SocketSender:
 
         start_time = time.time()
         seconds_of_users_audio = 0
+
         while not self.stop_event.is_set():
             audio_chunk = self.queue_in.get()
             chunk_duration = len(audio_chunk) / (self.sample_rate * self.bytes_per_sample)
 
-            if (time.time() - start_time) > (seconds_of_users_audio - self.buffer_time):
-                self.stop_event.wait(timeout=(time.time() - start_time)-(time.time() - start_time))
+            #(time.time() - start_time) - время, которое прошло с начала передачи непрерывного аудио
+            #seconds_of_users_audio - длительность аудио, которое суммарно было передано с момента start_time
+            #self.buffer_time - временная фора, с которой чанки аудио присылаются пользователю
+            if (time.time() - start_time) < (seconds_of_users_audio - self.buffer_time):
+                self.stop_event.wait(timeout=(seconds_of_users_audio - self.buffer_time)-(time.time() - start_time))
 
+            #выполняется в случае, если новый чанк для отправки получен слишком поздно
             if time.time() - start_time > seconds_of_users_audio:
-                seconds_of_users_audio
+                seconds_of_users_audio = 0
                 start_time = time.time()
 
             if isinstance(audio_chunk, bytes) and audio_chunk == b"END":
@@ -56,7 +61,6 @@ class SocketSender:
 
             seconds_of_users_audio += chunk_duration
             self.conn.sendall(audio_chunk)
-            if isinstance(audio_chunk, bytes) and audio_chunk == b"END":
-                break
+
         self.conn.close()
         logger.info("Sender closed")
