@@ -63,7 +63,7 @@ class BaseHandler:
 
                 if self.data_chain_input:
                     if not isinstance(input_data_chain, ImmutableDataChain):
-                        logger.error("Incorrect input data in {self.__class__.__name__}")
+                        logger.error(f"Incorrect input data in {self.__class__.__name__}")
                     input_data = input_data_chain.get_data()
                 else:
                     input_data = input_data_chain
@@ -98,7 +98,7 @@ class BaseHandler:
 
             if self.data_chain_input:
                 if not isinstance(input_data_chain, ImmutableDataChain):
-                    logger.error("Incorrect input data in {self.__class__.__name__}")
+                    logger.error(f"Incorrect input data in {self.__class__.__name__}")
                 input_data = input_data_chain.get_data()
             else:
                 input_data = input_data_chain
