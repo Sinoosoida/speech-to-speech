@@ -265,7 +265,7 @@ def build_pipeline(
         SocketReceiver(
             stop_event = stop_event,
             queue_out = recv_audio_chunks_queue,
-            should_listen = should_listen, #should_listen = should_listen,
+            should_listen = None, #should_listen = should_listen,
             host=socket_receiver_kwargs.recv_host,
             port=socket_receiver_kwargs.recv_port,
             chunk_size=socket_receiver_kwargs.chunk_size,
@@ -283,7 +283,7 @@ def build_pipeline(
         queue_in=recv_audio_chunks_queue,
         queue_out=spoken_prompt_queue,
         threads=1,
-        setup_args=(should_listen, interruption_request_queue),
+        setup_args=(None, interruption_request_queue),
         setup_kwargs=vars(vad_handler_kwargs),
     )
 
@@ -298,7 +298,7 @@ def build_pipeline(
                          open_api_language_model_handler_kwargs, mlx_language_model_handler_kwargs)
 
     tts = get_tts_handler(module_kwargs, stop_event, lm_response_queue, audio_response_queue_of_iterators,
-                          should_listen,
+                          None,
                           parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs,
                           mms_tts_handler_kwargs, openai_tts_handler_kwargs, elevenlabs_tts_handler_kwargs,
                           iterated=True)
