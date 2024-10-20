@@ -1,18 +1,24 @@
 import logging
+from queue import Queue, Empty
 
 logger = logging.getLogger(__name__)
 
 class InterruptionManagerHandler:
-    def __init__(self, stop_event, is_speaking_event):
+    def __init__(self, stop_event, interruption_request_queue):
         self.stop_event = stop_event
-        self.is_speaking_event = is_speaking_event
+        self.interruption_request_queue = interruption_request_queue
 
     def run(self):
+        logger.info("Interruption Manager started.")
         while not self.stop_event.is_set():
-            event_is_set = self.is_speaking_event.wait(timeout=0.1)
-            if self.stop_event.is_set():
-                break
-            if event_is_set:
-                logger.debug("Пользователь начал говорить достаточно долго.")
-                self.is_speaking_event.clear()
-                logger.debug("Событие is_speaking_event сброшено.")
+            try:
+                interruption_request = self.interruption_request_queue.get(timeout=0.05)
+                if interruption_request is not None:
+                    logger.info(f"Processing interruption request: {interruption_request}")
+
+            except Empty:
+                continue
+            except Exception as e:
+                logger.error(f"Error while handling interruption: {e}")
+
+        logger.info("Interruption Manager stopped.")

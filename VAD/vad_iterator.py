@@ -1,17 +1,19 @@
 import torch
-
+from utils.data import ImmutableDataChain
 from connections.socket_sender import logger
+from queue import Queue
 
 
 class VADIterator:
     def __init__(
         self,
         model,
+        start_data: ImmutableDataChain,
         threshold: float = 0.5,
         sampling_rate: int = 16000,
         min_silence_duration_ms: int = 100,
         speech_pad_ms: int = 30,
-        is_speaking_event = None,
+        interruption_request_queue: Queue= None,
         min_speech_ms: int = 1000,
     ):
         """
@@ -37,20 +39,21 @@ class VADIterator:
         """
 
         self.model = model
+        self.start_data = start_data
         self.threshold = threshold
         self.sampling_rate = sampling_rate
         self.is_speaking = False
         self.speech_start_sample = 0
         self.buffer = []
-        self.is_speaking_event = is_speaking_event
+        self.interruption_request_queue = interruption_request_queue
         self.min_speech_ms = min_speech_ms
 
         if sampling_rate not in [8000, 16000]:
             raise ValueError(
                 "VADIterator does not support sampling rates other than [8000, 16000]"
             )
-        if is_speaking_event is None:
-            logger.debug("No speaking event in VAD")
+        if interruption_request_queue is None:
+            logger.debug("No interruption in VAD")
 
         self.min_silence_samples = sampling_rate * min_silence_duration_ms / 1000
         self.speech_pad_samples = sampling_rate * speech_pad_ms / 1000
@@ -94,7 +97,7 @@ class VADIterator:
             return None
 
         if self.triggered and (self.samples_in_buffer / self.sampling_rate * 1000)  >= self.min_speech_ms and not self.event_set:
-            self.is_speaking_event.set()
+            self.interruption_request_queue.put(self.start_data.get_counter())
             self.event_set = True
 
         if (speech_prob < self.threshold - 0.15) and self.triggered:#чел вроде закончил говорить

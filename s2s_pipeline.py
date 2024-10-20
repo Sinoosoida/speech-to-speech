@@ -213,7 +213,8 @@ def initialize_queues_and_events():
     return {
         "stop_event": Event(),                      #Останавливает работу вообще всего навсегда
         "should_listen": Event(),                   #Для того, чтобы не слушать пользователя
-        "is_speaking_event": Event(),               #Начал ли пользователь говорить. Если событие установлен, то vad гарантировано что-то выдаст, когда пользователь закончит говорить
+        # "is_speaking_event": Event(),               #Начал ли пользователь говорить. Если событие установлен, то vad гарантировано что-то выдаст, когда пользователь закончит говорить
+        "interruption_request_queue": Queue(),
         "recv_audio_chunks_queue": Queue(),         #Полученое аудио
         "send_audio_chunks_queue": Queue(),         #Отправленое аудио
         "spoken_prompt_queue": Queue(),             #Куски речи
@@ -246,7 +247,8 @@ def build_pipeline(
 
     stop_event = queues_and_events["stop_event"]
     should_listen = queues_and_events["should_listen"]
-    is_speaking_event = queues_and_events["is_speaking_event"]
+    # is_speaking_event = queues_and_events["is_speaking_event"]
+    interruption_request_queue = queues_and_events["interruption_request_queue"]
     recv_audio_chunks_queue = queues_and_events["recv_audio_chunks_queue"]
     send_audio_chunks_queue = queues_and_events["send_audio_chunks_queue"]
     spoken_prompt_queue = queues_and_events["spoken_prompt_queue"]
@@ -289,7 +291,7 @@ def build_pipeline(
         queue_in=recv_audio_chunks_queue,
         queue_out=spoken_prompt_queue,
         threads=1,
-        setup_args=(should_listen, is_speaking_event),
+        setup_args=(should_listen, interruption_request_queue),
         setup_kwargs=vars(vad_handler_kwargs),
     )
 
@@ -308,7 +310,7 @@ def build_pipeline(
     
     deiterator = DeiteratorHandler(stop_event, audio_response_queue_of_iterators, send_audio_chunks_queue)
 
-    interruption_manager = InterruptionManagerHandler(stop_event, is_speaking_event)
+    interruption_manager = InterruptionManagerHandler(stop_event, interruption_request_queue)
 
     return ThreadManager([*comms_handlers, vad, stt, filler, lm, tts, deiterator, interruption_manager])
 

@@ -25,7 +25,7 @@ class VADHandler(BaseHandler):
     def setup(
         self,
         should_listen,
-        is_speaking_event,
+        interruption_request_queue,
         thresh=0.3,
         sample_rate=16000,
         min_silence_ms=1000,
@@ -35,26 +35,26 @@ class VADHandler(BaseHandler):
         audio_enhancement=False,
     ):
         self.should_listen = should_listen
-        self.is_speaking_event = is_speaking_event
+        self.interruption_request_queue = interruption_request_queue
         self.sample_rate = sample_rate
         self.min_silence_ms = min_silence_ms
         self.min_speech_ms = min_speech_ms
         self.max_speech_ms = max_speech_ms
         self.model, _ = torch.hub.load("snakers4/silero-vad", "silero_vad")
+        self.start_data = ImmutableDataChain()
         self.iterator = VADIterator(
             self.model,
+            self.start_data,
             threshold=thresh,
             sampling_rate=sample_rate,
             min_silence_duration_ms=min_silence_ms,
             speech_pad_ms=speech_pad_ms,
-            is_speaking_event=self.is_speaking_event,
+            interruption_request_queue=self.interruption_request_queue,
             min_speech_ms = min_speech_ms
         )
         self.audio_enhancement = audio_enhancement
         if audio_enhancement:
             self.enhanced_model, self.df_state, _ = init_df()
-
-        self.start_data = ImmutableDataChain()
 
     def process(self, audio_chunk):
         audio_int16 = np.frombuffer(audio_chunk, dtype=np.int16)

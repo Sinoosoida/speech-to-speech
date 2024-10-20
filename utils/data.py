@@ -55,8 +55,26 @@ class ImmutableDataChain:
             raise KeyError(f"Ключ '{key}' не найден")
         return value
 
-    def __setitem__(self, key, value):
-        return self.add_data(value, key)
+    def get_index(self, key):
+        """Возвращает индекс, соответствующий ключу, или None, если ключ не найден."""
+        with self._lock:
+            if self._key == key:
+                return self.index
+            elif self._previous is not None:
+                return self._previous.get_index(key)
+            else:
+                return None
+
+    def get_counter(self, key=None):
+        """Возвращает значение counter, соответствующее ключу, или None, если ключ не найден."""
+        with self._lock:
+            if self._key == key:
+                return self._counter+1
+            elif self._previous is not None:
+                return self._previous.get_counter(key)+1
+            else:
+                return None
+
 
 example_data = {
     "user_audio":None,
