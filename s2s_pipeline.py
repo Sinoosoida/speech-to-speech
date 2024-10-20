@@ -4,6 +4,7 @@ import sys
 from copy import copy
 from pathlib import Path
 from queue import Queue
+from utils.data import FilteredQueue
 from threading import Event
 from typing import Optional
 from sys import platform
@@ -211,17 +212,17 @@ def prepare_all_args(
 
 def initialize_queues_and_events():
     return {
-        "stop_event": Event(),                      #Останавливает работу вообще всего навсегда
-        "should_listen": Event(),                   #Для того, чтобы не слушать пользователя
-        # "is_speaking_event": Event(),               #Начал ли пользователь говорить. Если событие установлен, то vad гарантировано что-то выдаст, когда пользователь закончит говорить
+        "stop_event": Event(),  # Останавливает работу вообще всего навсегда
+        "should_listen": Event(),  # Для того, чтобы не слушать пользователя
+        # "is_speaking_event": Event(),  #Начал ли пользователь говорить. Если событие установлен, то vad гарантировано что-то выдаст, когда пользователь закончит говорить
         "interruption_request_queue": Queue(),
-        "recv_audio_chunks_queue": Queue(),         #Полученое аудио
-        "send_audio_chunks_queue": Queue(),         #Отправленое аудио
-        "spoken_prompt_queue": Queue(),             #Куски речи
-        "text_prompt_queue": Queue(),               #Куски текст
-        "preprocessed_text_prompt_queue": Queue(),  #Куски предобработаного текста
-        "lm_response_queue": Queue(),               #Ответы LLM
-        "audio_response_queue_of_iterators": Queue(),
+        "recv_audio_chunks_queue": Queue(),  # Полученое аудио
+        "send_audio_chunks_queue": FilteredQueue(),  # Готовое аудио для отправки
+        "spoken_prompt_queue": FilteredQueue(),  # Куски речи
+        "text_prompt_queue": FilteredQueue(),  # Куски текст
+        "preprocessed_text_prompt_queue": FilteredQueue(),  # Куски предобработаного текста
+        "lm_response_queue": FilteredQueue(),  # Ответы LLM
+        "audio_response_queue_of_iterators": FilteredQueue(),
     }
 
 
@@ -244,7 +245,6 @@ def build_pipeline(
         elevenlabs_tts_handler_kwargs,
         queues_and_events,
 ):
-
     stop_event = queues_and_events["stop_event"]
     should_listen = queues_and_events["should_listen"]
     # is_speaking_event = queues_and_events["is_speaking_event"]
@@ -297,20 +297,27 @@ def build_pipeline(
 
     stt = get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs,
                           paraformer_stt_handler_kwargs)
-    
+
     filler = get_filler_handler(module_kwargs, stop_event, text_prompt_queue, preprocessed_text_prompt_queue,
                                 audio_response_queue_of_iterators, filler_handler_kwargs)
-    
-    lm = get_llm_handler(module_kwargs, stop_event, preprocessed_text_prompt_queue, lm_response_queue, language_model_handler_kwargs,
+
+    lm = get_llm_handler(module_kwargs, stop_event, preprocessed_text_prompt_queue, lm_response_queue,
+                         language_model_handler_kwargs,
                          open_api_language_model_handler_kwargs, mlx_language_model_handler_kwargs)
-    
-    tts = get_tts_handler(module_kwargs, stop_event, lm_response_queue, audio_response_queue_of_iterators, should_listen,
+
+    tts = get_tts_handler(module_kwargs, stop_event, lm_response_queue, audio_response_queue_of_iterators,
+                          should_listen,
                           parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs,
-                          mms_tts_handler_kwargs, openai_tts_handler_kwargs, elevenlabs_tts_handler_kwargs, iterated = True)
-    
+                          mms_tts_handler_kwargs, openai_tts_handler_kwargs, elevenlabs_tts_handler_kwargs,
+                          iterated=True)
+
     deiterator = DeiteratorHandler(stop_event, audio_response_queue_of_iterators, send_audio_chunks_queue)
 
-    interruption_manager = InterruptionManagerHandler(stop_event, interruption_request_queue)
+    interruption_manager = InterruptionManagerHandler(
+        stop_event = stop_event,
+        interruption_request_queue = interruption_request_queue,
+        filtered_queues=[instance for instance in queues_and_events.values() if isinstance(instance, FilteredQueue)]
+    )
 
     return ThreadManager([*comms_handlers, vad, stt, filler, lm, tts, deiterator, interruption_manager])
 
@@ -386,7 +393,7 @@ def get_llm_handler(
 
 def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chunks_queue, should_listen,
                     parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs, mms_tts_handler_kwargs,
-                    openai_tts_handler_kwargs, elevenlabs_tts_handler_kwargs, iterated = False):
+                    openai_tts_handler_kwargs, elevenlabs_tts_handler_kwargs, iterated=False):
     if module_kwargs.tts == "parler":
         assert not iterated
         from TTS.parler_handler import ParlerTTSHandler
@@ -486,13 +493,15 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
     else:
         raise ValueError("The TTS should be either parler, melo or chatTTS")
 
-def get_filler_handler(module_kwargs, stop_event, text_prompt_queue, preprocessed_text_prompt_queue, send_audio_chunks_queue, filler_handler_kwargs):
+
+def get_filler_handler(module_kwargs, stop_event, text_prompt_queue, preprocessed_text_prompt_queue,
+                       send_audio_chunks_queue, filler_handler_kwargs):
     from FILLER_GEN.filler_generator import FillerHandler
     return FillerHandler(
         stop_event,
-        queue_in = text_prompt_queue,
-        queue_out_mess = preprocessed_text_prompt_queue,
-        queue_out_audio = send_audio_chunks_queue,
+        queue_in=text_prompt_queue,
+        queue_out_mess=preprocessed_text_prompt_queue,
+        queue_out_audio=send_audio_chunks_queue,
         setup_kwargs=vars(filler_handler_kwargs),
     )
 

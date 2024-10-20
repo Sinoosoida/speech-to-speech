@@ -1,4 +1,6 @@
 import threading
+import queue
+import threading
 
 class ImmutableDataChain:
     def __init__(self, value=None, key=None, save_data=True, previous=None, index=None):
@@ -85,3 +87,52 @@ example_data = {
     "output_audio_iterator": None,
     "output_audio_chunk":None
 }
+
+
+class FilteredQueue:
+    def __init__(self):
+        self._queue = queue.Queue()
+        self._user_phrase_id = 0
+        self._put_lock = threading.Lock()
+        self._get_lock = threading.Lock()
+
+    def set_user_phrase_id(self, phrase_id: int):
+        """Sets the user_phrase_id that will be used for comparison."""
+        self._user_phrase_id = phrase_id
+
+    def put(self, item: dict):
+        """Puts the item in the queue if it passes the validation check."""
+        with self._put_lock:
+            if self._validate_item(item):
+                self._queue.put(item)
+            else:
+                print(f"Item rejected: 'user_audio' not matching {self._user_phrase_id} or missing.")
+
+    def get(self):
+        """Gets the next item from the queue, blocking until one is available."""
+        with self._get_lock:
+            return self._queue.get()
+
+    def remove_non_matching(self):
+        """Removes all items in the queue that don't match the user_phrase_id."""
+        with self._put_lock, self._get_lock:  # Lock both get and put actions while modifying the queue
+            temp_queue = queue.Queue()
+            while not self._queue.empty():
+                item = self._queue.get()
+                if self._validate_item(item):
+                    temp_queue.put(item)
+
+            # Replace the original queue with the filtered one
+            self._queue = temp_queue
+
+    def _validate_item(self, item: ImmutableDataChain) -> bool:
+        """Checks if the item has 'user_audio' matching the current user_phrase_id."""
+        user_phrase_id = item.get_index('user_audio')
+        if user_phrase_id is None:
+            return False
+        return user_phrase_id >= self._user_phrase_id
+
+    def filter(self, phrase_id: int):
+        """Sets the user_phrase_id and removes non-matching items in one step."""
+        self.set_user_phrase_id(phrase_id)
+        self.remove_non_matching()
