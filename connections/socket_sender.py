@@ -61,6 +61,7 @@ class SocketSender:
                 break
 
             seconds_of_users_audio += chunk_duration
+            logger.debug(f"Chunck {chunk_duration}s sended, {seconds_of_users_audio}s of audio are users, {(time.time() - start_time)}s past")
             self.conn.sendall(audio_chunk)
 
         self.conn.close()
