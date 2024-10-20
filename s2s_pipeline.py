@@ -246,7 +246,7 @@ def build_pipeline(
         queues_and_events,
 ):
     stop_event = queues_and_events["stop_event"]
-    should_listen = queues_and_events["should_listen"]
+    # should_listen = queues_and_events["should_listen"]
     # is_speaking_event = queues_and_events["is_speaking_event"]
     interruption_request_queue = queues_and_events["interruption_request_queue"]
     recv_audio_chunks_queue = queues_and_events["recv_audio_chunks_queue"]
@@ -256,35 +256,27 @@ def build_pipeline(
     preprocessed_text_prompt_queue = queues_and_events["preprocessed_text_prompt_queue"]
     lm_response_queue = queues_and_events["lm_response_queue"]
     audio_response_queue_of_iterators = queues_and_events["audio_response_queue_of_iterators"]
+    should_listen = None
 
-    if module_kwargs.mode == "local":
-        from connections.local_audio_streamer import LocalAudioStreamer
+    from connections.socket_receiver import SocketReceiver
+    from connections.socket_sender import SocketSender
 
-        local_audio_streamer = LocalAudioStreamer(
-            input_queue=recv_audio_chunks_queue, output_queue=send_audio_chunks_queue
-        )
-        comms_handlers = [local_audio_streamer]
-        should_listen.set()
-    else:
-        from connections.socket_receiver import SocketReceiver
-        from connections.socket_sender import SocketSender
-
-        comms_handlers = [
-            SocketReceiver(
-                stop_event,
-                recv_audio_chunks_queue,
-                should_listen,
-                host=socket_receiver_kwargs.recv_host,
-                port=socket_receiver_kwargs.recv_port,
-                chunk_size=socket_receiver_kwargs.chunk_size,
-            ),
-            SocketSender(
-                stop_event,
-                send_audio_chunks_queue,
-                host=socket_sender_kwargs.send_host,
-                port=socket_sender_kwargs.send_port,
-            ),
-        ]
+    comms_handlers = [
+        SocketReceiver(
+            stop_event = stop_event,
+            queue_out = recv_audio_chunks_queue,
+            should_listen = should_listen, #should_listen = should_listen,
+            host=socket_receiver_kwargs.recv_host,
+            port=socket_receiver_kwargs.recv_port,
+            chunk_size=socket_receiver_kwargs.chunk_size,
+        ),
+        SocketSender(
+            stop_event,
+            send_audio_chunks_queue,
+            host=socket_sender_kwargs.send_host,
+            port=socket_sender_kwargs.send_port,
+        ),
+    ]
 
     vad = VADHandler(
         stop_event,

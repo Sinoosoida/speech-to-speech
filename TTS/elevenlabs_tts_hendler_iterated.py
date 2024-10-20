@@ -94,7 +94,9 @@ class ElevenLabsTTSHandler(BaseHandler):
         except Exception as e:
             logger.error(f"Error in ElevenLabsTTSHandler: {e}")
             iterator.close()
-            self.should_listen.set()
+            if self.should_listen is not None:
+                self.should_listen.set()
             return
 
-        self.should_listen.set()
+        if self.should_listen is not None:
+            self.should_listen.set()

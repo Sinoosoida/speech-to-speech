@@ -69,7 +69,8 @@ class VADHandler(BaseHandler):
                     f"audio input of duration: {len(array) / self.sample_rate}s, skipping"
                 )
             else:
-                self.should_listen.clear()
+                if self.should_listen is not None:
+                    self.should_listen.clear()
                 logger.debug("Stop listening")
                 if self.audio_enhancement:
                     if self.sample_rate != self.df_state.sr():

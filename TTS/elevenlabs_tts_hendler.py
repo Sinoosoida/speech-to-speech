@@ -86,7 +86,9 @@ class ElevenLabsTTSHandler(BaseHandler):
             logger.debug(f"All chunck recived")
         except Exception as e:
             logger.error(f"Error in ElevenLabsTTSHandler: {e}")
-            self.should_listen.set()
+            if self.should_listen is not None:
+                self.should_listen.set()
             return
 
-        self.should_listen.set()
+        if self.should_listen is not None:
+            self.should_listen.set()
