@@ -55,14 +55,14 @@ def listen_and_play(
             data = recv_queue.get()
             outdata[: len(data)] = data
             outdata[len(data) :] = b"\x00" * (len(outdata) - len(data))
+            print("Yes  server --> home")
         else:
-            print("No data")
+            print("No   server --> home")
             outdata[:] = b"\x00" * len(outdata)
 
     def callback_send(indata, frames, time, status):
-        if recv_queue.empty():
-            data = bytes(indata)
-            send_queue.put(data)
+        data = bytes(indata)
+        send_queue.put(data)
 
     def send(stop_event, send_queue):
         while not stop_event.is_set():
