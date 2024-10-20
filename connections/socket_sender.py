@@ -15,7 +15,7 @@ class SocketSender:
     Handles sending generated audio packets to the clients.
     """
 
-    def __init__(self, stop_event, queue_in, host="0.0.0.0", port=12346, sample_rate=16000, bytes_per_sample=2, buffer_time=0.5):
+    def __init__(self, stop_event, queue_in, host="0.0.0.0", port=12346, sample_rate=16000, bytes_per_sample=2, buffer_time=0.1):
         self.stop_event = stop_event
         self.queue_in = queue_in
         self.host = host
