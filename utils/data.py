@@ -100,7 +100,7 @@ class FilteredQueue:
         """Sets the user_phrase_id that will be used for comparison."""
         self._user_phrase_id = phrase_id
 
-    def put(self, item: dict):
+    def put(self, item: ImmutableDataChain):
         """Puts the item in the queue if it passes the validation check."""
         with self._put_lock:
             if self._validate_item(item):
@@ -110,20 +110,19 @@ class FilteredQueue:
 
     def get(self):
         """Gets the next item from the queue, blocking until one is available."""
-        with self._get_lock:
-            return self._queue.get()
+        return self._queue.get()
 
     def remove_non_matching(self):
         """Removes all items in the queue that don't match the user_phrase_id."""
-        with self._put_lock, self._get_lock:  # Lock both get and put actions while modifying the queue
-            temp_queue = queue.Queue()
-            while not self._queue.empty():
-                item = self._queue.get()
-                if self._validate_item(item):
-                    temp_queue.put(item)
+        temp_queue = queue.Queue()
+        while not self._queue.empty():
+            item = self._queue.get()
+            if self._validate_item(item):
+                temp_queue.put(item)
 
-            # Replace the original queue with the filtered one
-            self._queue = temp_queue
+        while not temp_queue.empty():
+            item = temp_queue.get()
+            self._queue.put(item)
 
     def _validate_item(self, item: ImmutableDataChain) -> bool:
         """Checks if the item has 'user_audio' matching the current user_phrase_id."""
@@ -134,5 +133,6 @@ class FilteredQueue:
 
     def filter(self, phrase_id: int):
         """Sets the user_phrase_id and removes non-matching items in one step."""
-        self.set_user_phrase_id(phrase_id)
-        self.remove_non_matching()
+        with self._put_lock, self._get_lock:  # Lock both get and put actions while modifying the queue
+            self.set_user_phrase_id(phrase_id)
+            self.remove_non_matching()
