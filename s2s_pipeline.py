@@ -27,6 +27,7 @@ from arguments_classes.vad_arguments import VADHandlerArguments
 from arguments_classes.whisper_stt_arguments import WhisperSTTHandlerArguments
 from arguments_classes.melo_tts_arguments import MeloTTSHandlerArguments
 from arguments_classes.open_api_language_model_arguments import OpenApiLanguageModelHandlerArguments
+from TTS.elevenlabs_tts_hendler_iterated import ElevenLabsTTSHandler
 import torch
 import nltk
 from rich.console import Console
