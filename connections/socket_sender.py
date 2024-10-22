@@ -44,7 +44,7 @@ class SocketSender:
 
         while not self.stop_event.is_set():
             audio_chunk = self.queue_in.get().get_data()
-            chunk_duration = len(audio_chunk) / (self.sample_rate * self.bytes_per_sample) * 2 #idk why 2
+            chunk_duration = len(audio_chunk) / self.sample_rate # * self.bytes_per_sample) #idk why it is not
 
             #(time.time() - start_time) - время, которое прошло с начала передачи непрерывного аудио
             #seconds_of_users_audio - длительность аудио, которое суммарно было передано с момента start_time

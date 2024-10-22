@@ -37,8 +37,6 @@ class IteratorHandler:
             input_data = self.queue_in.get()
 
             if isinstance(input_data, bytes) and input_data == b"END":
-                # Sentinel signal to avoid queue deadlock
-                # self.stop_event.set()
                 logger.debug("Stopping thread")
                 break
 
