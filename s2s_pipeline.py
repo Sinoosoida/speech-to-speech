@@ -27,7 +27,6 @@ from arguments_classes.vad_arguments import VADHandlerArguments
 from arguments_classes.whisper_stt_arguments import WhisperSTTHandlerArguments
 from arguments_classes.melo_tts_arguments import MeloTTSHandlerArguments
 from arguments_classes.open_api_language_model_arguments import OpenApiLanguageModelHandlerArguments
-from TTS.elevenlabs_tts_hendler_iterated import ElevenLabsTTSHandler
 import torch
 import nltk
 from rich.console import Console
@@ -457,7 +456,7 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
         )
     elif module_kwargs.tts == "elevenlabsTTS" and not iterated:
         try:
-            from TTS.elevenlabs_tts_hendler import ElevenLabsTTSHandler
+            from TTS.elevenlabs_tts_handler import ElevenLabsTTSHandler
         except RuntimeError as e:
             logger.error("Error importing ChatTTSHandler")
             raise e
@@ -471,7 +470,7 @@ def get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chu
         )
     elif module_kwargs.tts == "elevenlabsTTS" and iterated:
         try:
-            from TTS.elevenlabs_tts_hendler_iterated import ElevenLabsTTSHandler
+            from TTS.elevenlabs_tts_handler_iterated import ElevenLabsTTSHandler
         except RuntimeError as e:
             logger.error("Error importing ChatTTSHandler")
             raise e
