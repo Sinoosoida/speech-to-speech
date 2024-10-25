@@ -55,10 +55,12 @@ class OpenApiModelHandler(BaseHandler):
             proxy_url = os.getenv("PROXY_URL")
 
         # Создаем один экземпляр httpx.Client и переиспользуем его
+        limits = httpx.Limits(keepalive_expiry = 60*60)
         if proxy_url is not None:
-            self.http_client = httpx.Client(proxies=proxy_url)
+            self.http_client = httpx.Client(proxies=proxy_url, limits = limits, timeout=60*60)
         else:
-            self.http_client = httpx.Client()
+            raise ConnectionError("No proxy")
+            self.http_client = httpx.Client(limits = limits, timeout=60*60)
 
         self.client = OpenAI(api_key=api_key, base_url=base_url, http_client=self.http_client)
         self.warmup()

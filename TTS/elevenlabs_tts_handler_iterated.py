@@ -40,7 +40,8 @@ class ElevenLabsTTSHandler(BaseHandler):
         assert self.proxy_url is not None, "Proxy URL must be provided."
 
         # Создаем один экземпляр httpx.Client и сохраняем его в self.http_client
-        self.http_client = httpx.Client(proxies=self.proxy_url)
+        limits = httpx.Limits(keepalive_expiry=60 * 60)
+        self.http_client = httpx.Client(proxies=self.proxy_url, limits=limits, timeout=60*60)
 
         # Переиспользуем http_client для клиента ElevenLabs
         self.client = ElevenLabs(
