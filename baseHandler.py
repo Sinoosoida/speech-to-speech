@@ -54,12 +54,27 @@ class BaseHandler:
         self.queue_out.put(b"END")
 
     def process_and_write(self, input_data, writer_id):
+
+        logger.debug(
+            f"{self.__class__.__name__} [{writer_id}]: Started")
+
+        start_time = perf_counter()                 # Время начала обработки
+        first_chunk_time = None                     # Время получения первого чанка
+        last_chunk_time = None                      # Время получения последнего чанка
         buffer = deque()  # Internal buffer for storing chunks
 
         try:
 
             #Пока получаем данные
             for chunk in self.process(input_data):
+
+                current_time = perf_counter()
+                if first_chunk_time is None:
+                    first_chunk_time = current_time
+                    total_time_first_chunk = first_chunk_time - start_time
+                    logger.debug(
+                        f"{self.__class__.__name__} [{writer_id}]: First chunk after {total_time_first_chunk:.3f} s")
+
                 with self.condition:
                     if writer_id == self.next_write_sequence:
                         while buffer:
@@ -68,6 +83,9 @@ class BaseHandler:
                     else:
                         buffer.append(chunk)
 
+            last_chunk_time = perf_counter()
+            total_time_all_chunks = last_chunk_time - start_time
+            logger.debug(f"{self.__class__.__name__} [{writer_id}]: All chunks after {total_time_all_chunks:.3f} s")
             #Получили все данные, но ждём очереди записи.
             if buffer:
                 with self.condition:
