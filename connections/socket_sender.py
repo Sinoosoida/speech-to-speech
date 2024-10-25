@@ -33,12 +33,6 @@ class SocketSender:
         self.conn, _ = self.socket.accept()
         logger.info("sender connected")
 
-        # while not self.stop_event.is_set():
-        #     audio_chunk = self.queue_in.get()
-        #     self.conn.sendall(audio_chunk)
-        #     if isinstance(audio_chunk, bytes) and audio_chunk == b"END":
-        #         break
-
         start_time = time.time()
         seconds_of_users_audio = 0
 
@@ -61,7 +55,6 @@ class SocketSender:
                 break
 
             seconds_of_users_audio += chunk_duration
-            logger.debug(f"Chunck {chunk_duration}s sended, {seconds_of_users_audio}s of audio are users, {(time.time() - start_time)}s past")
             self.conn.sendall(audio_chunk)
 
         self.conn.close()
