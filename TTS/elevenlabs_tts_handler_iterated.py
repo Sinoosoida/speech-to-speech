@@ -37,12 +37,15 @@ class ElevenLabsTTSHandler(BaseHandler):
             proxy_url = os.getenv("PROXY_URL")
         self.proxy_url = proxy_url
 
-        assert proxy_url
+        assert self.proxy_url is not None, "Proxy URL must be provided."
 
+        # Создаем один экземпляр httpx.Client и сохраняем его в self.http_client
+        self.http_client = httpx.Client(proxies=self.proxy_url)
 
+        # Переиспользуем http_client для клиента ElevenLabs
         self.client = ElevenLabs(
             api_key=self.api_key,
-            httpx_client=httpx.Client(proxy=self.proxy_url),
+            httpx_client=self.http_client,
         )
 
         self.warmup()
@@ -79,17 +82,17 @@ class ElevenLabsTTSHandler(BaseHandler):
             for chunk in audio:
                 if chunk:
 
-                    if first_chunk:  # Добавлено: вывод информации о первом чанке
+                    if first_chunk:
                         logger.debug(f"First chunk received")
                         first_chunk = False
 
                     buffer += chunk
                     even_chunk = buffer[:(len(buffer) // 2) * 2]
-                    audio_chunk = np.frombuffer(even_chunk, dtype='<i2')  # 16-битные целые числа, little-endian
+                    audio_chunk = np.frombuffer(even_chunk, dtype='<i2')
                     iterator.put(audio_chunk)
                     buffer = buffer[(len(buffer) // 2) * 2:]
 
-            logger.debug(f"All chunck recived")
+            logger.debug(f"All chunks received")
             iterator.close()
         except Exception as e:
             logger.error(f"Error in ElevenLabsTTSHandler: {e}")
@@ -100,3 +103,7 @@ class ElevenLabsTTSHandler(BaseHandler):
 
         if self.should_listen is not None:
             self.should_listen.set()
+
+    def close(self):
+        # Закрываем http_client при завершении работы
+        self.http_client.close()
